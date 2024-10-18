@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+from decimateur_utils import *
 import obja
 import numpy as np
 import sys

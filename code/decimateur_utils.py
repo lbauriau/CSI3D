@@ -11,10 +11,10 @@ class Tag(Enum):
 
 class Face:
 
-    def __init__(self, id, flag, vertex):
+    def __init__(self, id, flag, vertices):
         self.id = id
         self.flag = flag
-        self.vertex = vertex
+        self.vertices = vertices
 
 class Vertex:
 
@@ -28,9 +28,9 @@ class Vertex:
 
 class Patch:
 
-    def __init__(self, id, boundingVertex):
+    def __init__(self, id, boundingVertices):
         self.id = id
-        self.boundingVertex = boundingVertex
+        self.boundingVertices = boundingVertices
         
 class Gate:
 
