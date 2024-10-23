@@ -11,32 +11,41 @@ class Tag(Enum):
 
 class Face:
 
-    def __init__(self, flag, vertices):
+    def __init__(self, flag, keyVertices):
         self.flag = flag
-        self.vertices = vertices
+        self.keyVertices = keyVertices
 
 class Vertex:
 
-    def __init__(self, attachedFaces, flag, tag, x, y, z):
+    def __init__(self, keyAttachedFaces, flag, tag, x, y, z):
         self.flag = flag
         self.tag = tag
         self.x = x
         self.y = y
         self.z = z
-        self.attachedFaces = attachedFaces
+        self.keyAttachedFaces = keyAttachedFaces
 
 class Patch:
 
-    def __init__(self, id, boundingVertices):
+    def __init__(self, id, keyBoundingVertices):
         self.id = id
-        self.boundingVertices = boundingVertices
+        self.keyBoundingVertices = keyBoundingVertices
         
 class Gate:
 
-    def __init__(self, id, frontFace, vertices):
+    def __init__(self, id, frontFace, keyVertices):
         self.id = id
         self.frontFace = frontFace
-        self.vertices = vertices
+        self.keyVertices = keyVertices
+
+    def getFrontVertex(self):
+        frontVertex = None
+        for v in self.frontFace.vertices:
+            if v not in self.vertices:
+                frontVertex = v
+        return frontVertex
+        
+
 
     
 
