@@ -1,4 +1,5 @@
 from enum import Enum
+import random
 
 class Flag(Enum):
     Free = 1
@@ -43,7 +44,17 @@ class Gate:
             if v not in self.keyVertices:
                 frontVertex = v
         return frontVertex
-        
+
+def get_first_gate(vertices, faces):
+    random_face = faces(random.randrange(0,len(faces)))
+    
+    #On récupère le premier vertex de la face
+    first_vertex = vertices[random_face.keyVertices[0]]
+    
+    #On récupère le deuxième vertex de la face
+    second_vertex = vertices[random_face.keyVertices[1]]
+    
+    return Gate(random_face, [first_vertex, second_vertex])
 
 
     
