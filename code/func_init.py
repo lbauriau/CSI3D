@@ -5,10 +5,12 @@ def initialize(nomFichier):
     with open(nomFichier, 'r') as f:
         lines = f.readlines()
 
-    vertex = []
-    faces = []
-    idVertex = 0
-    idFace = 0
+    vertex = {}
+    faces = {}
+    gates = {}
+    idVertex = 1
+    idFace = 1
+    idGate = 1
 
     for line in lines:
 
@@ -18,30 +20,36 @@ def initialize(nomFichier):
             return
 
         elif split[0] == 'v':
-            v_temp = decimateur_utils.Vertex(idVertex,
-                                             decimateur_utils.Flag(1),
-                                             decimateur_utils.Tag(1),
-                                             split[1], split[2], split[3])
-            vertex.append(v_temp)
+            x = split[1]
+            y = split[2]
+            z = split[3]
+            v_temp = decimateur_utils.Vertex([],
+                                             decimateur_utils.Flag.Free,
+                                             None,
+                                             float(x), float(y), float(z))
+
+            vertex[str(idVertex)] = v_temp
             idVertex +=1
 
         elif split[0] == 'f':
-            f_temp = decimateur_utils.Face(idFace,
-                                             decimateur_utils.Flag(1),
-                                             split[1])
-            faces.append(f_temp)
+            keyvertex1 = split[1]
+            keyvertex2 = split[2]
+            keyvertex3 = split[3]
+            f_temp = decimateur_utils.Face(decimateur_utils.Flag.Free,
+                                           [keyvertex1, keyvertex2, keyvertex3])
+            faces[str(idFace)] = f_temp
             idFace +=1
 
     return vertex , faces
 
 
 (v,f) =initialize('../TestModels/6ValenceShape.obj')
-for vert in v:
-    print(vert.id)
+for j in range (len(v)):
+    vert = v[str(j+1)]
     print(vert.x)
     print(vert.y)
     print(vert.z)
 
-for face in f:
-    print(face.id)
-    print(face.vertex)
+for j in range (len(f)):
+    face = f[str(j+1)]
+    print(face.keyVertices)

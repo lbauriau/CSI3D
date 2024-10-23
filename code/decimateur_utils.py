@@ -33,15 +33,14 @@ class Patch:
         
 class Gate:
 
-    def __init__(self, id, frontFace, keyVertices):
-        self.id = id
+    def __init__(self, frontFace, keyVertices):
         self.frontFace = frontFace
         self.keyVertices = keyVertices
 
     def getFrontVertex(self):
         frontVertex = None
-        for v in self.frontFace.vertices:
-            if v not in self.vertices:
+        for v in self.frontFace.keyVertices:
+            if v not in self.keyVertices:
                 frontVertex = v
         return frontVertex
         
