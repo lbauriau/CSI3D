@@ -1,5 +1,4 @@
 from enum import Enum
-import random
 
 class Flag(Enum):
     Free = 1
@@ -12,47 +11,98 @@ class Tag(Enum):
 
 class Face:
 
-    def __init__(self, flag, keyVertices):
+    def __init__(self, flag, vertices):
         self.flag = flag
-        self.keyVertices = keyVertices
+        self.vertices = vertices
 
 class Vertex:
 
-    def __init__(self, keyAttachedFaces, flag, tag, x, y, z):
+    def __init__(self, attachedFaces, flag, tag, x, y, z):
         self.flag = flag
         self.tag = tag
         self.x = x
         self.y = y
         self.z = z
-        self.keyAttachedFaces = keyAttachedFaces
+        self.attachedFaces = attachedFaces
 
 class Patch:
 
-    def __init__(self, id, keyBoundingVertices):
+    def __init__(self, id, entry_gate):
         self.id = id
-        self.keyBoundingVertices = keyBoundingVertices
+        self.entry_gate = entry_gate
+        self.center_vertex = entry_gate.getFrontVertex()
+        self.boundingVertices = []
+        
+        #On rempli la liste boundingVertices à l'aide du center_vertex
+        for f in self.center_vertex.attachedFaces:
+            for v in f.vertices:
+                if v != self.center_vertex and v not in self.boundingVertices:
+                    self.boundingVertices.append(v)
+
+    #Retourne une liste ordonnée des output gates
+    def getOutputGates(self):
+        output_gates = []
+        
+        #On traite chaque vertex les uns à la suite des autres. Chaque vertex est potentiellement attaché à 2 
+        #output gates. On garde donc en mémoire les deux derniers points traités pour éviter les redondances.
+        #On procède de manière circulaire en partant du coté "droit" de la gate d'entrée et en finissant du 
+        #coté "gauche" de cette dernière.
+        previous_vertex = self.entry_gate.vertices[0]
+        current_vertex = self.entry_gate.vertices[1]
+        
+        for i in range(len(self.boundingVertices)):
+            #On cherche maintenant à trouver à quel vertex parmis la liste des bounding vertex
+            #le current vertex est attaché (ormis le previous_vertex car ce couple à déjà été traité)
+
+            #Pour cela, on trouve la face connectée au current_vertex qui contient le center_vertex mais pas
+            #le previous vertex. En effet, cette face donne accès au next_vertex
+            next_interior_face = [f for f in current_vertex.attachedFaces if
+                              self.center_vertex in f.vertices and
+                              previous_vertex not in f.vertices][0]
+            
+            next_vertex = [v for v in next_interior_face.vertices if v != current_vertex and v != self.center_vertex][0]
+            
+            #On récupère maintenant la face exterieure au patch liant current_vertex avec next_vertex.
+            #Elle dois contenir ces deux derniers vertex mais pas le center_vertex
+            next_outside_face = [f for f in current_vertex.attachedFaces if
+                            next_vertex in f.vertices and
+                            self.center_vertex not in f.vertices][0]
+            
+            #On vérifie que la gate n'est pas déjà dans la liste output_gates. Pour cela, on vérifie que
+            #la next_outside_face n'est pas déjà renseignée par une des gates de la liste output_gates
+            if len([g for g in output_gates if g.frontFace == next_outside_face]) == 0:
+                #On ajoute la nouvelle gate aux output_gates
+                output_gates.append(Gate(next_outside_face, [current_vertex, next_vertex]))
+                
+        return output_gates
+            
+        
+        
         
 class Gate:
 
-    def __init__(self, frontFace, keyVertices):
+    def __init__(self, frontFace, vertices):
         self.frontFace = frontFace
-        self.keyVertices = keyVertices
+        self.vertices = vertices
 
     def getFrontVertex(self):
         frontVertex = None
-        for v in self.frontFace.keyVertices:
-            if v not in self.keyVertices:
+        for v in self.frontFace.vertices:
+            if v not in self.vertices:
                 frontVertex = v
         return frontVertex
 
-def get_first_gate(vertices, faces):
-    random_face = faces(random.randrange(0,len(faces)))
+def getFirstGate(faces):
+    #On choisie la "première" face stockée dans la liste de faces,
+    #mais on pourrait aussi tirer une face au hasard, ce qui
+    ##serait un peu plus couteux
+    random_face = faces[0]
     
     #On récupère le premier vertex de la face
-    first_vertex = vertices[random_face.keyVertices[0]]
+    first_vertex = random_face.vertices[0]
     
     #On récupère le deuxième vertex de la face
-    second_vertex = vertices[random_face.keyVertices[1]]
+    second_vertex = random_face.vertices[1]
     
     return Gate(random_face, [first_vertex, second_vertex])
 
