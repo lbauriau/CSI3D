@@ -75,6 +75,9 @@ class Patch:
             print(f"current_vertex attachedFaces ids:{[f.id for f in current_vertex.attachedFaces]}")
             for f in current_vertex.attachedFaces:
                 print(f"   face {f.id} attached verts: {[v.id for v in f.vertices]}")
+            print(f"[f for f in current_vertex.attachedFaces if self.center_vertex in f.vertices and previous_vertex not in f.vertices]:{[f for f in current_vertex.attachedFaces if
+                              self.center_vertex in f.vertices and
+                              previous_vertex not in f.vertices]}")
             print(f"next_interior_face ids:{[f.id for f in next_interior_face]}")
             
             #Si on ne trouve pas de face répondant aux contriantes on ne trouvera pas d'output gate pour le
