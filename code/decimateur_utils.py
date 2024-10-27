@@ -1,5 +1,5 @@
 from enum import Enum
-#Bonjour
+
 class Flag(Enum):
     Free = 1
     Conquered = 2
@@ -11,13 +11,15 @@ class Tag(Enum):
 
 class Face:
 
-    def __init__(self, flag, vertices):
+    def __init__(self, id, flag, vertices):
+        self.id = id
         self.flag = flag
         self.vertices = vertices
 
 class Vertex:
 
-    def __init__(self, attachedFaces, flag, tag, x, y, z):
+    def __init__(self, id, attachedFaces, flag, tag, x, y, z):
+        self.id = id
         self.flag = flag
         self.tag = tag
         self.x = x
@@ -38,6 +40,11 @@ class Patch:
             for v in f.vertices:
                 if v != self.center_vertex and v not in self.boundingVertices:
                     self.boundingVertices.append(v)
+                    
+    def getValence(self):
+        #La valence d'un patch est en réalité la valence du vertex central, et
+        #cette dernière correspond au nombre de faces liées à ce vertex
+        return len(self.center_vertex.attachedFaces)
 
     #Retourne une liste ordonnée des output gates
     def getOutputGates(self):
@@ -91,6 +98,15 @@ class Gate:
             if v not in self.vertices:
                 frontVertex = v
         return frontVertex
+
+def printVertsAndFaces(vertices,faces):
+    for j in range (len(vertices)):
+        vert = vertices[j]
+        print(f"Vertex {j}: id:{vert.id} flag:{vert.flag} tag:{vert.tag} pos:{vert.x},{vert.y},{vert.z} attachedFaces_id:{[i.id for i in vert.attachedFaces]}")
+
+    for j in range (len(faces)):
+        face = faces[j]
+        print(f"Face {j}: id:{face.id} flag:{face.flag} verts_id:{[v.id for v in face.vertices]}")
 
 def getFirstGate(faces):
     #On choisie la "première" face stockée dans la liste de faces,
