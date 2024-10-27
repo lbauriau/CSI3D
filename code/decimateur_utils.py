@@ -56,30 +56,53 @@ class Patch:
         #coté "gauche" de cette dernière.
         previous_vertex = self.entry_gate.vertices[0]
         current_vertex = self.entry_gate.vertices[1]
+        print(f"gate verts index:{previous_vertex.id}, {current_vertex.id}")
+        print(f"patch bounding verts idx:{[v.id for v in self.boundingVertices]}")
         
         for i in range(len(self.boundingVertices)):
+            print("")
+            print(f"Current vertex id:{current_vertex.id}")
             #On cherche maintenant à trouver à quel vertex parmis la liste des bounding vertex
             #le current vertex est attaché (ormis le previous_vertex car ce couple à déjà été traité)
 
             #Pour cela, on trouve la face connectée au current_vertex qui contient le center_vertex mais pas
             #le previous vertex. En effet, cette face donne accès au next_vertex
+            print(f"prev vert id: {previous_vertex.id}")
+            print(f"self.center_vertex id: {self.center_vertex.id}")
             next_interior_face = [f for f in current_vertex.attachedFaces if
                               self.center_vertex in f.vertices and
-                              previous_vertex not in f.vertices][0]
+                              previous_vertex not in f.vertices]
+            print(f"current_vertex attachedFaces ids:{[f.id for f in current_vertex.attachedFaces]}")
+            for f in current_vertex.attachedFaces:
+                print(f"   face {f.id} attached verts: {[v.id for v in f.vertices]}")
+            print(f"next_interior_face ids:{[f.id for f in next_interior_face]}")
             
-            next_vertex = [v for v in next_interior_face.vertices if v != current_vertex and v != self.center_vertex][0]
+            #Si on ne trouve pas de face répondant aux contriantes on ne trouvera pas d'output gate pour le
+            #current vertex
+            if(len(next_interior_face) != 0):
+                next_interior_face = next_interior_face[0]
             
-            #On récupère maintenant la face exterieure au patch liant current_vertex avec next_vertex.
-            #Elle dois contenir ces deux derniers vertex mais pas le center_vertex
-            next_outside_face = [f for f in current_vertex.attachedFaces if
-                            next_vertex in f.vertices and
-                            self.center_vertex not in f.vertices][0]
+                next_vertex = [v for v in next_interior_face.vertices if v != current_vertex and v != self.center_vertex][0]
             
-            #On vérifie que la gate n'est pas déjà dans la liste output_gates. Pour cela, on vérifie que
-            #la next_outside_face n'est pas déjà renseignée par une des gates de la liste output_gates
-            if len([g for g in output_gates if g.frontFace == next_outside_face]) == 0:
-                #On ajoute la nouvelle gate aux output_gates
-                output_gates.append(Gate(next_outside_face, [current_vertex, next_vertex]))
+                #On récupère maintenant la face exterieure au patch liant current_vertex avec next_vertex.
+                #Elle dois contenir ces deux derniers vertex mais pas le center_vertex
+                next_outside_face = [f for f in current_vertex.attachedFaces if
+                                next_vertex in f.vertices and
+                                self.center_vertex not in f.vertices]
+            
+                #Si on ne trouve pas de face répondant aux contriantes on ne trouvera pas d'output gate pour le
+                #current vertex (c'est possible qu'il n'existe pas de faces en dehors du patch)
+                if(len(next_outside_face) != 0):
+                    next_outside_face = next_outside_face[0]
+            
+                    #On vérifie que la gate n'est pas déjà dans la liste output_gates. Pour cela, on vérifie que
+                    #la next_outside_face n'est pas déjà renseignée par une des gates de la liste output_gates
+                    if len([g for g in output_gates if g.frontFace == next_outside_face]) == 0:
+                        #On ajoute la nouvelle gate aux output_gates
+                        output_gates.append(Gate(next_outside_face, [current_vertex, next_vertex]))
+            
+            previous_vertex = current_vertex
+            current_vertex = next_vertex
                 
         return output_gates
             

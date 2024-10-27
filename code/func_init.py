@@ -72,5 +72,5 @@ def initialize(nomFichier):
     return vertex , faces
 
 
-(v,f) = initialize('../TestModels/3ValenceShape.obj')
-decimateur_utils.printVertsAndFaces(v,f)
+#(v,f) = initialize('../TestModels/3ValenceShape.obj')
+#decimateur_utils.printVertsAndFaces(v,f)
