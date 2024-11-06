@@ -149,13 +149,40 @@ def getFirstGate(faces):
     
     return Gate(random_face, [first_vertex, second_vertex])
 
-
+def removedVertex(patchToRemoved,vertices, faces):
+    vertexPatch = patchToRemoved.boundingVertices
+    # On récupère le vertex à enlever ainsi que ces faces attachées
+    vertexToRemoved = patchToRemoved.center_vertex
+    vertexRemovedAttachedFaces = vertexToRemoved.attachedFaces
+    # On enlève les faces attachées au vertex dans la liste de toutes les faces
+    for face in vertexRemovedAttachedFaces:
+        faces.remove(face)
+    # On enlève le vertex de la liste des vertex
+    vertices.remove(vertexToRemoved)
+    # on récupère la valence du vertex centrale pour pouvoir retrianguler
+    valence = patchToRemoved.getValence()
+    # On récupère la face d'entrée pour faire correctement le flag
+    faceEntry = patchToRemoved.entryGate
+    [vertex1,vertex2] = faceEntry.vertices
+    flag1 = vertex1.flag
+    flag2 = vertex2.flag
+    # Enlever les faces des vertex !!!!
+    match valence :
+        case 3 :
+            newFace = Face(0,Flag.Conquered,vertexPatch)
+            faces.append(newFace)
+        case 4 :
+            indexVertex1 = vertexPatch.index(vertex1)
+            match (vertex1.flag, vertex2.flag):
+                case Tag.Plus, Tag.Minus:
+                    vertex3 = vertexPatch.pop((indexVertex1+2)%4)                                                                                                                                                                    
+                    newFace1 = Face(0,Flag.Conquered,[vertex1,vertex2,vertex3])
+        case 5 :
+            
+        case 6 :
+            
+        case _ :
+                print("Error : ce cas n'est possible.")
+         
+            
     
-
-
-
-
-
-        
-    
-
