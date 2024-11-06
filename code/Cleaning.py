@@ -19,10 +19,12 @@ def cleaningConquest(vertices, faces):
         #On crée une instance de l'objet patch à l'aide de la gate traitée
         current_patch = decimateur_utils.Patch(0,current_gate)
         
-        print(f"current patch id: {current_patch.id} center vertex:{current_patch.center_vertex.id} valence: {current_patch.getValence()}")
+        print(f"current patch center vertex:{current_patch.center_vertex.id} valence: {current_patch.getValence()}")
         
+        print("-> GetOutputGates:")
         #On récupère les portes de sorties liées à ce patch
         outputGates = current_patch.getOutputGates()
+        print("** Fin GetOutputGates")
         
         #On ajoute les portes de sorties à la fifo
         fifo += outputGates
@@ -36,6 +38,6 @@ def cleaningConquest(vertices, faces):
         print(f"len(fifo) = {len(fifo)}")
         
 #(v,f) = func_init.initialize('../TestModels/3ValenceShape.obj')
-(v,f) = func_init.initialize('../TestModels/Suzanne.obj')
+(v,f) = func_init.initialize('../TestModels/TestCleaningSimple.obj')
 decimateur_utils.printVertsAndFaces(v,f)
 cleaningConquest(v,f)
