@@ -30,16 +30,42 @@ class Vertex:
 class Patch:
 
     def __init__(self, id, entry_gate):
+
         self.id = id
         self.entry_gate = entry_gate
         self.center_vertex = entry_gate.getFrontVertex()
         self.boundingVertices = []
-        
-        #On rempli la liste boundingVertices à l'aide du center_vertex
-        for f in self.center_vertex.attachedFaces:
-            for v in f.vertices:
-                if v != self.center_vertex and v not in self.boundingVertices:
-                    self.boundingVertices.append(v)
+
+        def findnextface(listfaces, vertex):
+            for f in listfaces:
+                if vertex in f.vertices and self.center_vertex in f.vertices:
+                    return f
+            return None
+
+        self.boundingVertices += self.entry_gate.vertices
+
+        faceslist = self.center_vertex.attachedFaces
+        faceslist.remove(self.entry_gate.frontFace)
+        current_vertex = self.entry_gate.vertices[1]
+
+        while faceslist:
+            print( "___________ Nouveau tour de boucle ______________")
+            print("")
+            print(f"Current vertex id:{current_vertex.id}")
+            face = findnextface(faceslist, current_vertex)
+            print(f"faceslist:{[f.id for f in faceslist]}")
+            print(f"current_faces:{face.id}")
+            if face is not None:
+                for v in face.vertices:
+                    if v not in self.boundingVertices and v!= self.center_vertex:
+                        print (f"v.id :{v.id}")
+                        print (f"self.center_vertex.id :{self.center_vertex.id}")
+                        self.boundingVertices.append(v)
+
+                current_vertex = self.boundingVertices[-1]
+                print (f"new current_vertex.id :{current_vertex.id}")
+                print("")
+                faceslist.remove(face)
                     
     def getValence(self):
         #La valence d'un patch est en réalité la valence du vertex central, et
@@ -75,9 +101,6 @@ class Patch:
             current_vertex = next_vertex
                 
         return output_gates
-            
-        
-        
         
 class Gate:
 
@@ -108,10 +131,10 @@ def getFirstGate(faces):
     random_face = faces[5]
     
     #On récupère le premier vertex de la face
-    first_vertex = random_face.vertices[0]
+    first_vertex = random_face.vertices[1]
     
     #On récupère le deuxième vertex de la face
-    second_vertex = random_face.vertices[1]
+    second_vertex = random_face.vertices[2]
     
     return Gate(random_face, [first_vertex, second_vertex])
 
