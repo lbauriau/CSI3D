@@ -144,12 +144,5 @@ def getFirstGate(faces):
     return Gate(random_face, [first_vertex, second_vertex])
 
 
+            
     
-
-
-
-
-
-        
-    
-
