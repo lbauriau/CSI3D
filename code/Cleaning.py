@@ -21,10 +21,9 @@ def cleaningConquest(vertices, faces):
         
         print(f"current patch center vertex:{current_patch.center_vertex.id} valence: {current_patch.getValence()}")
         
-        print("-> GetOutputGates:")
         #On récupère les portes de sorties liées à ce patch
         outputGates = current_patch.getOutputGates()
-        print("** Fin GetOutputGates")
+        print(f"-> GetOutputGates: {outputGates}")
         
         #On ajoute les portes de sorties à la fifo
         fifo += outputGates

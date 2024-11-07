@@ -44,7 +44,7 @@ class Patch:
 
         self.boundingVertices += self.entry_gate.vertices
 
-        faceslist = self.center_vertex.attachedFaces
+        faceslist = self.center_vertex.attachedFaces[:]
         faceslist.remove(self.entry_gate.frontFace)
         current_vertex = self.entry_gate.vertices[1]
 
@@ -66,6 +66,8 @@ class Patch:
                 print (f"new current_vertex.id :{current_vertex.id}")
                 print("")
                 faceslist.remove(face)
+        print(f"bounding verts = {[v.id for v in self.boundingVertices]}")
+        print("")
                     
     def getValence(self):
         #La valence d'un patch est en réalité la valence du vertex central, et
@@ -80,7 +82,7 @@ class Patch:
         current_vertex = self.entry_gate.vertices[1]
         
         #-1 pour éviter l'entryGate
-        for i in range(len(self.boundingVertices - 1)):
+        for i in range(len(self.boundingVertices) - 1):
             
             next_vertex_index = (self.boundingVertices.index(current_vertex) + 1)%len(self.boundingVertices)
 
