@@ -15,15 +15,7 @@ def removedVertex(patchToRemoved,vertices, faces):
     vertexToRemoved = patchToRemoved.center_vertex
     vertexRemovedAttachedFaces = vertexToRemoved.attachedFaces
     
-    # On enlève les faces attachées au vertex dans la liste de toutes les faces
-    for face in vertexRemovedAttachedFaces:
-        faces.remove(face)
-        for vertex in vertexPatch : 
-            if face in vertex.attachedFaces:
-                vertex.attachedFaces.remove(face)
     
-    # On enlève le vertex de la liste des vertex
-    vertices.remove(vertexToRemoved)
     
     # On récupère la valence du vertex centrale pour pouvoir retrianguler
     valence = patchToRemoved.getValence()
@@ -130,3 +122,13 @@ def removedVertex(patchToRemoved,vertices, faces):
                     faces += [newFace1,newFace2, newFace3, newFace4]
         case _ :
                 print("Error : ce cas n'est possible.")
+            
+    # On enlève les faces attachées au vertex dans la liste de toutes les faces
+    for face in vertexRemovedAttachedFaces:
+        faces.remove(face)
+        for vertex in vertexPatch : 
+            if face in vertex.attachedFaces:
+                vertex.attachedFaces.remove(face)
+    
+    # On enlève le vertex de la liste des vertex
+    vertices.remove(vertexToRemoved)
