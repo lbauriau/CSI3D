@@ -38,6 +38,7 @@ class Patch:
 
         def findnextface(listfaces, vertex):
             for f in listfaces:
+                print(f"verts:{[v.id for v in f.vertices]}")
                 if vertex in f.vertices and self.center_vertex in f.vertices:
                     return f
             return None
@@ -48,12 +49,14 @@ class Patch:
         faceslist.remove(self.entry_gate.frontFace)
         current_vertex = self.entry_gate.vertices[1]
 
+        print("")
+        print( "Triage des bounding vertex...")
         while faceslist:
             print( "___________ Nouveau tour de boucle ______________")
             print("")
             print(f"Current vertex id:{current_vertex.id}")
-            face = findnextface(faceslist, current_vertex)
             print(f"faceslist:{[f.id for f in faceslist]}")
+            face = findnextface(faceslist, current_vertex)
             print(f"current_faces:{face.id}")
             if face is not None:
                 for v in face.vertices:

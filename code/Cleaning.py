@@ -13,6 +13,7 @@ def cleaningConquest(vertices, faces):
     while len(fifo) > 0:
         
         current_gate = fifo[0]
+        print("")
         print("________ New patch ________")
         print(f"current gate vertices: {[v.id for v in current_gate.vertices]} front face id:{current_gate.frontFace.id}")
         
