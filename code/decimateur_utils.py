@@ -102,7 +102,7 @@ class Patch:
             if(len(next_outside_face) != 0):
                 next_outside_face = next_outside_face[0]
                 #On ajoute la nouvelle gate aux output_gates
-                output_gates.append(Gate(next_outside_face, [next_vertex, current_vertex]))
+                output_gates.append(Gate(next_outside_face, [current_vertex, next_vertex]))
             current_vertex = next_vertex
                 
         return output_gates
