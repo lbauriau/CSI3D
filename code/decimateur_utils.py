@@ -1,4 +1,5 @@
 from enum import Enum
+import numpy as np
 
 class Flag(Enum):
     Free = 1
@@ -15,6 +16,19 @@ class Face:
         self.id = id
         self.flag = flag
         self.vertices = vertices
+        
+    
+    def getNormal(self):
+        listVertex = self.vertices
+        v1 = listVertex[0]
+        v2 = listVertex[1]
+        v3 = listVertex[2]
+        p1 = np.array([v1.x,v1.y,v1.z])
+        p2 = np.array([v2.x,v2.y,v2.z])
+        p3 = np.array([v3.x,v3.y,v3.z])
+        V12 = p2 - p1
+        V13 = p3 - p1
+        return np.cross(V12,V13)
 
 class Vertex:
 
@@ -106,7 +120,53 @@ class Patch:
             current_vertex = next_vertex
                 
         return output_gates
-        
+    
+    def getNormal(self):
+        n = len(self.boundingVertices)
+        N = [0,0,0]
+        for i in range (0,n-1):
+            v1 = self.boundingVertices[i%n]
+            v2 = self.boundingVertices[(i+1)%n]
+            v3 = self.boundingVertices[(i+2)%n]
+            p1 = np.array([v1.x,v1.y,v1.z])
+            p2 = np.array([v2.x,v2.y,v2.z])
+            p3 = np.array([v3.x,v3.y,v3.z])
+            V12 = p2 - p1
+            V13 = p3 - p1
+            Ni = np.cross(V12,V13)
+            N = N + Ni
+        N = N/n
+        return N
+    
+    def getBaricentre(self):
+        n = len(self.boundingVertices)
+        b = [0,0,0]
+        for i in range (0,n-1):
+            b = b + self.boundingVertices[i]
+        b = b/n
+        return b
+    
+    def getFrenet(self):
+        N = self.getNormal()
+        b = self.getBaricentre()
+        t1 = getFirstTangent(self,N)
+        t2 = getSecondTangent(N,t1)
+        return [b,t1,t2,N]
+    
+def getFirstTangent(patch,N):
+    vecteurGate = patch.entry_gate
+    v1 = vecteurGate[0]
+    v2 = vecteurGate[1]
+    p1 = np.array([v1.x,v1.y,v1.z])
+    p2 = np.array([v2.x,v2.y,v2.z])
+    gate = p2-p1
+    t1 = np.cross(N,gate)
+    return t1
+    
+def getSecondTangent(N,t1):
+    t2 = np.cross(N,t1)
+    return t2
+
 class Gate:
 
     def __init__(self, frontFace, vertices):
