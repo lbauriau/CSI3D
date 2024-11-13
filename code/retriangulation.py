@@ -1,10 +1,10 @@
 from decimateur_utils import *
 
 
-def retriangulation_conquest(vertices, faces, listPatchBeRemoved):
+def retriangulation_conquest(vertices, faces, listPatchBeRemoved,listFrenet):
     while (listPatchBeRemoved !=[]):
         patchRemoved = listPatchBeRemoved.pop([0])
-        removedVertex(patchRemoved,vertices,faces)
+        removedVertex(patchRemoved,vertices,faces,listFrenet)
     return 1
 
 
@@ -17,6 +17,7 @@ def removedVertex(patchToRemoved,vertices, faces, listFrenet):
     vertexRemovedAttachedFaces = vertexToRemoved.attachedFaces
     
     # Ajout des coefficients de Frenet
+    # patchFrenet est de la forme [b, t1,t2,N]
     patchFrenet = patchToRemoved.getFrenet()
     listFrenet.append(patchFrenet)
     
