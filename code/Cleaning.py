@@ -4,69 +4,79 @@ from decimateur_utils import *
 import func_init
 
 def cleaningConquest(vertices, faces):
+    print("")
+    print("________ Cleaning ________")
     bn = []
     FrenCoord = []
     
     firstGate = getFirstGate(faces)
     fifo = [firstGate]
+
+    print(f"first gate: {[v.id for v in firstGate.vertices]}")
     
     #Tant qu'il y en a on traite les gates de la fifo
     while len(fifo) > 0:
         
         current_gate = fifo[0]
         print("")
-        print("________ New patch ________")
-        print(f"current gate vertices: {[v.id for v in current_gate.vertices]} front face id:{current_gate.frontFace.id}")
+        print("    ________ New patch ________")
+        print(f"    current gate vertices: {[v.id for v in current_gate.vertices]} front face id:{current_gate.frontFace.id}")
         
-        #On crée une instance de l'objet patch à l'aide de la gate traitée
+        #On crï¿½e une instance de l'objet patch ï¿½ l'aide de la gate traitï¿½e
         current_patch = Patch(0,current_gate, False)
         
-        print(f"current patch center vertex:{current_patch.center_vertex.id} valence: {current_patch.getValence()}")
+        print(f"    current patch center vertex:{current_patch.center_vertex.id} valence: {current_patch.getValence()}")
         
-        #On vérifie si le patch a déjà été conquis et si oui on retire la gate de la fifo
+        #On vï¿½rifie si le patch a dï¿½jï¿½ ï¿½tï¿½ conquis et si oui on retire la gate de la fifo
         if(current_gate.frontFace.flag == Flag.Conquered) or (current_gate.frontFace.flag == Flag.ToBeRemoved):
-            print(f"Patch has already been conquered")
+            print(f"    Patch has already been conquered")
 
         elif(current_patch.center_vertex.flag == Flag.Free) and (current_patch.getValence() <= 3):
+            print(f"    Patch is going to be simplified")
+
             #On traite le patch
-            current_gate.center_vertex.flag = Flag.ToBeRemoved #Pas très utile car on traite le patch ici
+            current_gate.center_vertex.flag = Flag.ToBeRemoved #Pas trï¿½s utile car on traite le patch ici
             bn.append(current_patch.getValence())
             FrenCoord.append(current_patch.getFrenetCoordinates())
 
-            #On récupère les portes de sorties liées à ce patch
+            #On rï¿½cupï¿½re les portes de sorties liï¿½es ï¿½ ce patch
             outputGates = current_patch.getOutputGates()
-            print(f"-> GetOutputGates: {outputGates}")
+            print(f"    -> Patch exit gate: {outputGates}")
 
             for v in current_patch.boundingVertices:
                 v.flag = Flag.Conquered
 
-            #On marque les faces des output gates comme étant conquered et on
-            #ajoute à la fifo les output gates correctes
+            #On marque les faces des output gates comme ï¿½tant conquered et on
+            #ajoute ï¿½ la fifo les output gates correctes
             for gate in outputGates:
                 gate.frontFace.flag = Flag.Conquered
             for gate in outputGates:
-                fifo += Patch(0,gate, True).getOutputGates()
+                gates = Patch(0,gate, True).getOutputGates()
+                fifo += gates
+                print(f"        -> outputgate added to fifo: {[g for g in gates]}")
 
-            #Suppression des éléments du patch
+            #Suppression des ï¿½lï¿½ments du patch
             for face in current_patch.center_vertex.attachedFaces:
-                #On enlève toutes les références aux faces que l'on enlève
+                #On enlï¿½ve toutes les rï¿½fï¿½rences aux faces que l'on enlï¿½ve
                 for v in current_patch.boundingVertices:
                     if face in v.attachedFaces:
                         v.attachedFaces.remove(face)
-                #On enlève la face de la liste des faces
+                #On enlï¿½ve la face de la liste des faces
                 faces.remove(face)
-                #On enlève le center vertex de la liste des vertices
+                #On enlï¿½ve le center vertex de la liste des vertices
                 vertices.remove(current_patch.center_vertex)
-            #On ajoute la nouvelle face à la liste des faces
+                print(f"    -> Removed vertex: {current_patch.center_vertex.id}")
+            #On ajoute la nouvelle face ï¿½ la liste des faces
             newFace = Face(0,Flag.Conquered,current_patch.boundingVertices)
             faces.append(newFace)
 
         elif(current_patch.center_vertex.flag == Flag.Free) and (current_patch.getValence() > 3) or current_patch.center_vertex.flag == Tag.Conquered:
+            print(f"    -> null patch found")
             current_gate.frontFace.flag == Flag.Conquered
             fifo += Patch(0,current_gate, True).getOutputGates()
             bn.append(0)
             
-        #On enlève la gate que nous venons de traiter de la fifo
+        #On enlï¿½ve la gate que nous venons de traiter de la fifo
         fifo.pop(0)
         print(f"len(fifo) = {len(fifo)}")
 
