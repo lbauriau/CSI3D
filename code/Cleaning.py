@@ -63,7 +63,7 @@ def cleaningConquest(vertices, faces):
 
         elif(current_patch.center_vertex.flag == Flag.Free) and (current_patch.getValence() > 3) or current_patch.center_vertex.flag == Tag.Conquered:
             current_gate.frontFace.flag == Flag.Conquered
-            fifo += Patch(0,gate, True).getOutputGates()
+            fifo += Patch(0,current_gate, True).getOutputGates()
             bn.append(0)
             
         #On enlève la gate que nous venons de traiter de la fifo
