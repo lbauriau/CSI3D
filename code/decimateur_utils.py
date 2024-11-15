@@ -1,3 +1,4 @@
+import random
 from enum import Enum
 import numpy as np
 
@@ -80,8 +81,9 @@ class Patch:
                 print(f"Current vertex id:{current_vertex.id}")
                 print(f"faceslist:{[f.id for f in faceslist]}")
                 face = findnextface(faceslist, current_vertex)
-                print(f"current_faces:{face.id}")
+
                 if face is not None:
+                    print(f"current_faces:{face.id}")
                     for v in face.vertices:
                         if v not in self.boundingVertices and v!= self.center_vertex:
                             print (f"v.id :{v.id}")
@@ -241,7 +243,7 @@ def getFirstGate(faces):
     #On choisie la "première" face stockée dans la liste de faces,
     #mais on pourrait aussi tirer une face au hasard, ce qui
     ##serait un peu plus couteux
-    random_face = faces[5]
+    random_face = faces[random.randint(0, len(faces)-1)]
     
     #On récupère le premier vertex de la face
     first_vertex = random_face.vertices[1]

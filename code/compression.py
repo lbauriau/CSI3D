@@ -12,6 +12,7 @@ class Compressor(obja.Model):
 
     def __init__(self):
         super().__init__()
+        self.deleted_faces = set()
 
 
     def parse_file(self, path):
@@ -25,17 +26,30 @@ class Compressor(obja.Model):
         i = 5
 
         while i != 0:
-            patch2BeRemoved, output, firstgates = decimating_conquest(self.vertices, self.faces)
+            patch2BeRemoved, output_iter, firstgates = decimating_conquest(self.vertices, self.faces)
 
             retriangulation_conquest(self.vertices, self.faces, patch2BeRemoved)
 
             Bn, firstgate = cleaningConquest(self.vertices, self.faces)
 
-            i += 1
+            i -= 1
 
-        # Write the result in output file
-        output_model = obja.Output(output, random_color=True)
+        # Iterate through the vertex
+        for (vertex_index, vertex) in enumerate(self.vertices):
+            # Delete the vertex
+            vertex.id = vertex_index
+            operations.append(('vertex', vertex_index, np.array([vertex.x,vertex.y,vertex.z], np.double)))
 
+        # Iterate through the faces
+        for (face_index, face) in enumerate(self.faces):
+
+            operations.append(('face', face_index, obja.Face(face.vertices[0].id,
+                                                             face.vertices[1].id,
+                                                             face.vertices[2].id,True)))
+
+
+        #  Write the result in output file
+        output_model = obja.Output(output, random_color= False)
         for (ty, index, value) in operations:
             if ty == "vertex":
                 output_model.add_vertex(index, value)
@@ -43,7 +57,8 @@ class Compressor(obja.Model):
                 output_model.add_face(index, value)
             else:
                 output_model.edit_vertex(index, value)
-        return output
+
+        return output_model
 
 def main(args=None):
     if args is None:
@@ -60,8 +75,9 @@ def main(args=None):
     model.parse_file(FILE_PATH)
 
     base = os.path.splitext(FILE_PATH)[0]
-    with open(f'{base}{'.obja'}', 'w') as output:
-        model.compress(output)
+    print(base)
+    with open(f'{base}{'2.obj'}', 'w') as output:
+       model.compress(output)
 
 
 if __name__ == '__main__':

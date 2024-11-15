@@ -33,9 +33,8 @@ def removedVertex(patchToRemoved,vertices, faces):
             for vertex in vertexPatch:
                 vertex.attachedFaces.append(newFace)
         case 4 :
-            indexVertex1 = vertexPatch.index(vertex1)
-            vertex3 = vertexPatch.pop((indexVertex1+2)%4)
-            vertex4 = vertexPatch.pop((indexVertex1+3)%4)  
+            vertex4 = vertexPatch.pop()
+            vertex3 = vertexPatch.pop()
             match vertex2.flag:
                 case Tag.Minus:                                                                                                                                                             
                     newFace1 = Face(0,Flag.Conquered,[vertex1,vertex2,vertex3])
@@ -54,10 +53,9 @@ def removedVertex(patchToRemoved,vertices, faces):
                     vertex4.attachedFaces += [newFace1, newFace2]
                     faces += [newFace1,newFace2]
         case 5 :
-            indexVertex1 = vertexPatch.index(vertex1)
-            vertex3 = vertexPatch.pop((indexVertex1+2)%5)
-            vertex4 = vertexPatch.pop((indexVertex1+3)%5)
-            vertex5 = vertexPatch.pop((indexVertex1+4)%5)
+            vertex5 = vertexPatch.pop()
+            vertex4 = vertexPatch.pop()
+            vertex3 = vertexPatch.pop()
             match vertex1.flag, vertex2.flag:
                 case _,Tag.Minus:
                     newFace1 = Face(0,Flag.Conquered,[vertex1,vertex2,vertex3])
@@ -90,11 +88,10 @@ def removedVertex(patchToRemoved,vertices, faces):
                     vertex5.attachedFaces.append(newFace3)
                     faces += [newFace1,newFace2, newFace3]
         case 6 :
-            indexVertex1 = vertexPatch.index(vertex1)
-            vertex3 = vertexPatch.pop((indexVertex1+2)%6)
-            vertex4 = vertexPatch.pop((indexVertex1+3)%6)
-            vertex5 = vertexPatch.pop((indexVertex1+4)%6)
-            vertex6 = vertexPatch.pop((indexVertex1+5)%6)
+            vertex6 = vertexPatch.pop()
+            vertex5 = vertexPatch.pop()
+            vertex4 = vertexPatch.pop()
+            vertex3 = vertexPatch.pop()
             match vertex2.flag:
                 case Tag.Minus:
                     newFace1 = Face(0,Flag.Conquered,[vertex1,vertex2,vertex3])
