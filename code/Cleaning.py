@@ -73,6 +73,6 @@ def cleaningConquest(vertices, faces):
         return bn, firstGate
         
 #(v,f) = func_init.initialize('../TestModels/3ValenceShape.obj')
-(v,f) = func_init.initialize('../TestModels/TestCleaningSimple.obj')
-printVertsAndFaces(v,f)
-cleaningConquest(v,f)
+#(v,f) = func_init.initialize('../TestModels/TestCleaningSimple.obj')
+#printVertsAndFaces(v,f)
+#cleaningConquest(v,f)
