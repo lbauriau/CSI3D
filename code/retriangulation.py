@@ -9,17 +9,13 @@ def retriangulation_conquest(vertices, faces, listPatchBeRemoved,listFrenet):
 
 
 
-def removedVertex(patchToRemoved,vertices, faces, listFrenet):
+def removedVertex(patchToRemoved,vertices, faces):
     vertexPatch = patchToRemoved.boundingVertices
     
     # On récupère le vertex à enlever ainsi que ces faces attachées
     vertexToRemoved = patchToRemoved.center_vertex
     vertexRemovedAttachedFaces = vertexToRemoved.attachedFaces
-    
-    # Ajout des coefficients de Frenet
-    # patchFrenet est de la forme [b, t1,t2,N]
-    patchFrenet = patchToRemoved.getFrenet()
-    listFrenet.append(patchFrenet)
+
     
     # On récupère la valence du vertex centrale pour pouvoir retrianguler
     valence = patchToRemoved.getValence()
