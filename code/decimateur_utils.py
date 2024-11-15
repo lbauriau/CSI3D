@@ -142,7 +142,8 @@ class Patch:
         n = len(self.boundingVertices)
         b = [0,0,0]
         for i in range (0,n-1):
-            b = b + self.boundingVertices[i]
+            vert = self.boundingVertices[i]
+            b = b + [vert.x,vert.y,vert.z]
         b = b/n
         return b
     
