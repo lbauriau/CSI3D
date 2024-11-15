@@ -4,12 +4,11 @@ from decimateur_utils import *
 import func_init
 
 def cleaningConquest(vertices, faces):
+    bn = []
+    FrenCoord = []
     
     firstGate = getFirstGate(faces)
-    
     fifo = [firstGate]
-
-    bn = []
     
     #Tant qu'il y en a on traite les gates de la fifo
     while len(fifo) > 0:
@@ -33,13 +32,13 @@ def cleaningConquest(vertices, faces):
             print(f"Patch has already been conquered")
 
         elif(current_patch.center_vertex.flag == Flag.Free) and (current_patch.getValence() <= 3):
-            current_gate.center_vertex.flag = Flag.ToBeRemoved
+            #On traite le patch
+            current_gate.center_vertex.flag = Flag.ToBeRemoved #Pas très utile car on traite le patch ici
             bn.append(current_patch.getValence())
+            FrenCoord.append(current_patch.getFrenetCoordinates())
+
             for v in current_patch.boundingVertices:
                 v.flag = Flag.Conquered
-
-            for face in current_patch.center_vertex.attachedFaces:
-                face.flag = Flag.ToBeRemoved
 
             #On marque les faces des output gates comme étant conquered et on
             #ajoute à la fifo les output gates correctes
@@ -47,6 +46,20 @@ def cleaningConquest(vertices, faces):
                 gate.frontFace.flag = Flag.Conquered
             for gate in outputGates:
                 fifo += Patch(0,gate, True).getOutputGates()
+
+            #Suppression des éléments du patch
+            for face in current_patch.center_vertex.attachedFaces:
+                #On enlève toutes les références aux faces que l'on enlève
+                for v in current_patch.boundingVertices:
+                    if face in v.attachedFaces:
+                        v.attachedFaces.remove(face)
+                #On enlève la face de la liste des faces
+                faces.remove(face)
+                #On enlève le center vertex de la liste des vertices
+                vertices.remove(current_patch.center_vertex)
+            #On ajoute la nouvelle face à la liste des faces
+            newFace = Face(0,Flag.Conquered,current_patch.boundingVertices)
+            faces.append(newFace)
 
         elif(current_patch.center_vertex.flag == Flag.Free) and (current_patch.getValence() > 3) or current_patch.center_vertex.flag == Tag.Conquered:
             current_gate.frontFace.flag == Flag.Conquered
@@ -57,7 +70,7 @@ def cleaningConquest(vertices, faces):
         fifo.pop(0)
         print(f"len(fifo) = {len(fifo)}")
 
-        return bn
+        return bn, firstGate
         
 #(v,f) = func_init.initialize('../TestModels/3ValenceShape.obj')
 (v,f) = func_init.initialize('../TestModels/TestCleaningSimple.obj')
