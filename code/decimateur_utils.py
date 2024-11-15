@@ -250,3 +250,18 @@ def getFirstGate(faces):
     second_vertex = random_face.vertices[2]
     
     return Gate(random_face, [first_vertex, second_vertex])
+
+
+def getFaceWithVertices(vert1,vert2):
+    n = len(vert1.attachedFaces)
+    for i in range(n):
+        if (vert1.attachedFaces[i] in vert2.attachedFaces):
+            if (vert1.attachedFace[1].flag == Flag.Free):
+                return vert1.attachedFaces[i]
+    return 0
+
+def getThirdVertex(face, vert1, vert2):
+    for i in range(3):
+        auxVert = face.vertices[i]
+        if (auxVert!= vert1 and auxVert!= vert2):
+            return auxVert
