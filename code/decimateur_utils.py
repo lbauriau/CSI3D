@@ -178,6 +178,23 @@ class Patch:
         t2 = getSecondTangent(N,t1)
         return [b,t1,t2,N]
     
+    def getFrenetCoordinates(self, vertex):
+        # Frenet Frame
+        [b,t1,t2,N] = self.getFrenet()
+
+        vertexCoordinates = np.array([vertex.x, vertex.y, vertex.z])
+        b = np.array(b)  
+        t1 = np.array(t1)
+        t2 = np.array(t2)  
+        N = np.array(N)    
+
+        offset = vertexCoordinates - b
+        alpha = np.dot(offset, t1)
+        beta = np.dot(offset, t2)
+        gamma = np.dot(offset, N)
+
+        return [alpha, beta, gamma]
+    
 def getFirstTangent(patch,N):
     vecteurGate = patch.entry_gate
     v1 = vecteurGate[0]
