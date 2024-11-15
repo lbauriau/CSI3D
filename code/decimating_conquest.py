@@ -11,7 +11,7 @@ def decimating_conquest(vertices, faces):
     output = []
     frenetCoordinates = []
     
-    firstGate = getFirstGate(vertices, faces)
+    firstGate = getFirstGate(faces)
     gateVertices = firstGate.vertices
     gateVertices[0].tag = Tag.Plus
     gateVertices[1].tag = Tag.Minus
@@ -29,7 +29,7 @@ def decimating_conquest(vertices, faces):
             fifoGate.pop(0)
         elif (frontVertex.flag == Flag.Free) and (frontVertex.getValence() <= 6):
             # The corresponding patch will be decimated and retriangulated
-            patch = Patch(patchId, entryGate)
+            patch = Patch(patchId, entryGate, False)
             patchs.append(patch)
             patchsBeRemoved.append(patch)
 
@@ -117,7 +117,7 @@ def decimating_conquest(vertices, faces):
             # output.append(0)
 
             # And the two other output gates of the triangle are pushed onto the fifo queue
-            patch = Patch(patchId, entryGate)
+            patch = Patch(patchId, entryGate, True)
             patchs.append(patch)
             outputGates = patch.getOutputGates()
             fifoGate += outputGates

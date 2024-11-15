@@ -19,13 +19,9 @@ def cleaningConquest(vertices, faces):
         print(f"current gate vertices: {[v.id for v in current_gate.vertices]} front face id:{current_gate.frontFace.id}")
         
         #On crée une instance de l'objet patch à l'aide de la gate traitée
-        current_patch = Patch(0,current_gate)
+        current_patch = Patch(0,current_gate, False)
         
         print(f"current patch center vertex:{current_patch.center_vertex.id} valence: {current_patch.getValence()}")
-        
-        #On récupère les portes de sorties liées à ce patch
-        outputGates = current_patch.getOutputGates()
-        print(f"-> GetOutputGates: {outputGates}")
         
         #On vérifie si le patch a déjà été conquis et si oui on retire la gate de la fifo
         if(current_gate.frontFace.flag == Flag.Conquered) or (current_gate.frontFace.flag == Flag.ToBeRemoved):
@@ -36,6 +32,10 @@ def cleaningConquest(vertices, faces):
             current_gate.center_vertex.flag = Flag.ToBeRemoved #Pas très utile car on traite le patch ici
             bn.append(current_patch.getValence())
             FrenCoord.append(current_patch.getFrenetCoordinates())
+
+            #On récupère les portes de sorties liées à ce patch
+            outputGates = current_patch.getOutputGates()
+            print(f"-> GetOutputGates: {outputGates}")
 
             for v in current_patch.boundingVertices:
                 v.flag = Flag.Conquered

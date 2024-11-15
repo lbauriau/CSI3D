@@ -1,10 +1,10 @@
 from decimateur_utils import *
 
 
-def retriangulation_conquest(vertices, faces, listPatchBeRemoved,listFrenet):
+def retriangulation_conquest(vertices, faces, listPatchBeRemoved):
     while (listPatchBeRemoved !=[]):
-        patchRemoved = listPatchBeRemoved.pop([0])
-        removedVertex(patchRemoved,vertices,faces,listFrenet)
+        patchRemoved = listPatchBeRemoved.pop(0)
+        removedVertex(patchRemoved,vertices,faces)
     return 1
 
 
@@ -21,7 +21,7 @@ def removedVertex(patchToRemoved,vertices, faces):
     valence = patchToRemoved.getValence()
     
     # On récupère la face d'entrée pour faire correctement le flag
-    faceEntry = patchToRemoved.entryGate
+    faceEntry = patchToRemoved.entry_gate
     [vertex1,vertex2] = faceEntry.vertices
     flag1 = vertex1.flag
     flag2 = vertex2.flag

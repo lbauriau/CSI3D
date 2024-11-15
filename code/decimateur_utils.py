@@ -41,12 +41,17 @@ class Vertex:
         self.z = z
         self.attachedFaces = attachedFaces
 
+    def getValence(self):
+        #Renvoie la valence d'un vertex
+        #cette dernière correspond au nombre de faces liées à ce vertex
+        return len(self.attachedFaces)
+
 class Patch:
 
     def __init__(self, id, entry_gate, isNullPatch):
 
         self.id = id
-        self.isNullPatch = isNullPatch;
+        self.isNullPatch = isNullPatch
         self.entry_gate = entry_gate
         self.center_vertex = entry_gate.getFrontVertex()
         self.boundingVertices = []
@@ -93,7 +98,7 @@ class Patch:
     def getValence(self):
         #La valence d'un patch est en réalité la valence du vertex central, et
         #cette dernière correspond au nombre de faces liées à ce vertex
-        return len(self.center_vertex.attachedFaces)
+        return self.center_vertex.getValence()
 
     #Retourne une liste ordonnée des output gates
     def getOutputGates(self):
@@ -101,23 +106,24 @@ class Patch:
         
         if self.isNullPatch:
             gate = self.entry_gate
-            first_outside_face = [f for f in gate.frontVertex.attachedFaces if
+            frontVertex = gate.getFrontVertex()
+            first_outside_face = [f for f in frontVertex.attachedFaces if
                                 (gate.vertices[0] in f.vertices and
                                 gate.vertices[1] not in f.vertices and
-                                gate.frontVertex in f.vertices)
+                                frontVertex in f.vertices)
                                 ]
             if(len(first_outside_face) != 0):
                 first_outside_face = first_outside_face[0]
-                output_gates.append(Gate(first_outside_face, [ gate.vertices[0], gate.frontVertex ]))
+                output_gates.append(Gate(first_outside_face, [ gate.vertices[0], frontVertex ]))
 
-            second_outside_face = [f for f in gate.frontVertex.attachedFaces if
+            second_outside_face = [f for f in frontVertex.attachedFaces if
                         (gate.vertices[1] in f.vertices and
                         gate.vertices[0] not in f.vertices and
-                        gate.frontVertex in f.vertices)
+                        frontVertex in f.vertices)
                         ]
             if(len(second_outside_face) != 0):
                 second_outside_face = second_outside_face[0]
-                output_gates.append(Gate(second_outside_face, [ gate.vertices[1], gate.frontVertex ]))
+                output_gates.append(Gate(second_outside_face, [ gate.vertices[1], frontVertex ]))
         else:
             #On commence par le vertex de "droite" de l'entry gate
             current_vertex = self.entry_gate.vertices[1]
@@ -164,10 +170,10 @@ class Patch:
     
     def getBaricentre(self):
         n = len(self.boundingVertices)
-        b = [0,0,0]
+        b = np.array([0,0,0])
         for i in range (0,n-1):
             vert = self.boundingVertices[i]
-            b = b + [vert.x,vert.y,vert.z]
+            b = b + np.array([vert.x,vert.y,vert.z])
         b = b/n
         return b
     
@@ -197,8 +203,8 @@ class Patch:
     
 def getFirstTangent(patch,N):
     vecteurGate = patch.entry_gate
-    v1 = vecteurGate[0]
-    v2 = vecteurGate[1]
+    v1 = vecteurGate.vertices[0]
+    v2 = vecteurGate.vertices[1]
     p1 = np.array([v1.x,v1.y,v1.z])
     p2 = np.array([v2.x,v2.y,v2.z])
     gate = p2-p1
