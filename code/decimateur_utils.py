@@ -42,14 +42,16 @@ class Vertex:
         self.z = z
         self.attachedFaces = attachedFaces
 
+    def __eq__(self, other):
+        return isinstance(other, Vertex) and self.id == other.id
+
     def getValence(self):
         #Renvoie la valence d'un vertex
         #cette dernière correspond au nombre de faces liées à ce vertex
-        connected_vertices = np.array([f.vertices for f in self.attachedFaces])
-
-        
-
-        return len(np.unique(connected_vertices) - 1)
+        connected_vertices = np.array([f.vertices for f in self.attachedFaces]).flatten()
+        connected_vertices = [v.id for v in connected_vertices]
+        #print(f"GET VALENCE index {self.id} {np.unique(connected_vertices)} = {len(np.unique(connected_vertices)) - 1}")
+        return len(np.unique(connected_vertices)) - 1
 
 class Patch:
 
@@ -76,10 +78,10 @@ class Patch:
             faceslist.remove(self.entry_gate.frontFace)
             current_vertex = self.entry_gate.vertices[1]
 
-            print("")
-            print( "Triage des bounding vertex...")
+            # print("")
+            # print( "Triage des bounding vertex...")
             while faceslist:
-                print(f"faceslist{[f.id for f in faceslist]}")
+                # print(f"faceslist{[f.id for f in faceslist]}")
                 face = findnextface(faceslist, current_vertex)
 
                 if face is not None:
@@ -90,11 +92,11 @@ class Patch:
                     current_vertex = self.boundingVertices[-1]
                     faceslist.remove(face)
                 else:
-                    print("ERROR ------------------------------------")
+                    print("ERROR --------------------------------------------------------------")
                     break
-            print(f"Gate: verts = {[v.id for v in self.entry_gate.vertices]}")
-            print(f"bounding verts = {[v.id for v in self.boundingVertices]}")
-            print("")
+            # print(f"Gate: verts = {[v.id for v in self.entry_gate.vertices]}")
+            # print(f"bounding verts = {[v.id for v in self.boundingVertices]}")
+            # print("")
                     
     def getValence(self):
         #La valence d'un patch est en réalité la valence du vertex central, et
@@ -252,6 +254,6 @@ def getFirstGate(faces):
     
     return Gate(random_face, [first_vertex, second_vertex])
 
-
-            
-    
+def getNextElementIndex(faces_or_verts):
+    element_idx = [f.id for f in faces_or_verts]
+    return max(element_idx) + 1

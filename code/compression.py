@@ -23,22 +23,29 @@ class Compressor(obja.Model):
     def compress(self, output):
 
         operations = []
-        i = 3
+        i = 0
 
-        while i != 0:
+        while i <= 3:
+            print("")
+            print("_________________________________________________________________________________________________")
+            print(f"Itteration {i+1}")
+            print("")
             patch2BeRemoved, output_iter, firstgate_decim = decimating_conquest(self.vertices, self.faces)
 
-            print(f"Vertex 2br {[p.center_vertex.id for p in patch2BeRemoved]}")
-            print(f"Firstgates: {[v.id for v in firstgate_decim.vertices]}")
-            print(f"old faces: {[f.id for f in self.faces]}")
+            print(f"Decimation {i+1} results:")
+            print(f"    - Vertex 2br {[p.center_vertex.id for p in patch2BeRemoved]}")
+            print(f"    - Firstgates: {[v.id for v in firstgate_decim.vertices]}")
+            print(f"    - faces: {[f.id for f in self.faces]}")
+            print("")
 
             retriangulation_conquest(self.vertices, self.faces, patch2BeRemoved)
 
-            print(f"retri faces: {[f.id for f in self.faces]}")
+            print(f"Retriangulation {i+1} results:")
+            print(f"    - retri faces: {[f.id for f in self.faces]}")
 
             #Bn, firstgate_clean = cleaningConquest(self.vertices, self.faces)
 
-            i -= 1
+            i += 1
 
         # Iterate through the vertex
         for (vertex_index, vertex) in enumerate(self.vertices):
