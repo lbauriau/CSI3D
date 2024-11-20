@@ -22,12 +22,12 @@ def decimating_conquest(vertices, faces):
         
         frontFace = entryGate.frontFace
         frontVertex = entryGate.getFrontVertex()
-        
+
         if (frontFace.flag == Flag.Conquered) or (frontFace.flag == Flag.ToBeRemoved):
             # Nothing to do, patch we enter has already been or cannot be conquered
             # We discard the current gate
             fifoGate.pop(0)
-        elif (frontVertex.flag == Flag.Free) and (frontVertex.getValence() <= 6):
+        elif (frontVertex.flag == Flag.Free) and (frontVertex.getValence() <= 6) and frontVertex.getValence() == len(frontVertex.attachedFaces):
             # The corresponding patch will be decimated and retriangulated
             patch = Patch(patchId, entryGate, False)
             patchs.append(patch)
@@ -37,6 +37,8 @@ def decimating_conquest(vertices, faces):
             frontVertex.flag = Flag.ToBeRemoved
             incidentFaces = frontVertex.attachedFaces
             valence = len(incidentFaces)
+            print(f"front vertex = {frontVertex.id}")
+            print(f"valence = {valence}")
 
             # Its neighboring vertices are flagged Conquered
             neighboringVertices = patch.boundingVertices
@@ -53,7 +55,7 @@ def decimating_conquest(vertices, faces):
             i = 0
             for nv in neighboringVertices:
                 if nv not in gateVertices:
-                    if (nv.tag !=None):
+                    if (nv.tag == None):
                         match valence:
                             case 3:
                                 if ((gateVertices[0].tag == Tag.Plus) and (gateVertices[1].tag == Tag.Plus)):
@@ -109,9 +111,11 @@ def decimating_conquest(vertices, faces):
             fifoGate += outputGates
             fifoGate.pop(0)
 
-        elif ((frontVertex.flag == Flag.Free) and (frontVertex.getValence() > 6)) or (frontVertex.flag == Flag.Conquered):
+        elif ((frontVertex.flag == Flag.Free) and (frontVertex.getValence() > 6)) or (frontVertex.flag == Flag.Conquered) or frontVertex.getValence() != len(frontVertex.attachedFaces):
             # The front face must be a null patch; we declare it conquered,
             frontFace.flag = Flag.Conquered
+
+            print("Null patch found")
 
             # A code null patch is generated. Not mandatory see 4.2 section
             # output.append(0)
@@ -124,6 +128,8 @@ def decimating_conquest(vertices, faces):
 
             #  We discard the current gate, and proceed to the next gate available on the fifo queue
             fifoGate.pop(0)
+
+
 
     return patchsBeRemoved, output, firstGate
 

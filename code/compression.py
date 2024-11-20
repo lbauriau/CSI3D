@@ -23,14 +23,20 @@ class Compressor(obja.Model):
     def compress(self, output):
 
         operations = []
-        i = 5
+        i = 3
 
         while i != 0:
-            patch2BeRemoved, output_iter, firstgates = decimating_conquest(self.vertices, self.faces)
+            patch2BeRemoved, output_iter, firstgate_decim = decimating_conquest(self.vertices, self.faces)
+
+            print(f"Vertex 2br {[p.center_vertex.id for p in patch2BeRemoved]}")
+            print(f"Firstgates: {[v.id for v in firstgate_decim.vertices]}")
+            print(f"old faces: {[f.id for f in self.faces]}")
 
             retriangulation_conquest(self.vertices, self.faces, patch2BeRemoved)
 
-            Bn, firstgate = cleaningConquest(self.vertices, self.faces)
+            print(f"retri faces: {[f.id for f in self.faces]}")
+
+            #Bn, firstgate_clean = cleaningConquest(self.vertices, self.faces)
 
             i -= 1
 
@@ -64,9 +70,9 @@ def main(args=None):
     if args is None:
         args = sys.argv[1:]
 
-    FILE_PATH = "../TestModels/SimpleCube.obj"
+    FILE_PATH = "../TestModels/IcoSphere.obj"
     if len(args) > 0:
-        FILE_PATH = args[-1]
+        FILE_PATH = f"../TestModels/{args[-1]}.obj"
     """
     Runs the program on the model given as parameter.
     """

@@ -45,7 +45,11 @@ class Vertex:
     def getValence(self):
         #Renvoie la valence d'un vertex
         #cette dernière correspond au nombre de faces liées à ce vertex
-        return len(self.attachedFaces)
+        connected_vertices = np.array([f.vertices for f in self.attachedFaces])
+
+        
+
+        return len(np.unique(connected_vertices) - 1)
 
 class Patch:
 
@@ -62,7 +66,6 @@ class Patch:
         else:
             def findnextface(listfaces, vertex):
                 for f in listfaces:
-                    print(f"verts:{[v.id for v in f.vertices]}")
                     if vertex in f.vertices and self.center_vertex in f.vertices:
                         return f
                 return None
@@ -76,24 +79,20 @@ class Patch:
             print("")
             print( "Triage des bounding vertex...")
             while faceslist:
-                print( "___________ Nouveau tour de boucle ______________")
-                print("")
-                print(f"Current vertex id:{current_vertex.id}")
-                print(f"faceslist:{[f.id for f in faceslist]}")
+                print(f"faceslist{[f.id for f in faceslist]}")
                 face = findnextface(faceslist, current_vertex)
 
                 if face is not None:
-                    print(f"current_faces:{face.id}")
                     for v in face.vertices:
                         if v not in self.boundingVertices and v!= self.center_vertex:
-                            print (f"v.id :{v.id}")
-                            print (f"self.center_vertex.id :{self.center_vertex.id}")
                             self.boundingVertices.append(v)
 
                     current_vertex = self.boundingVertices[-1]
-                    print (f"new current_vertex.id :{current_vertex.id}")
-                    print("")
                     faceslist.remove(face)
+                else:
+                    print("ERROR ------------------------------------")
+                    break
+            print(f"Gate: verts = {[v.id for v in self.entry_gate.vertices]}")
             print(f"bounding verts = {[v.id for v in self.boundingVertices]}")
             print("")
                     
