@@ -11,8 +11,6 @@ def discovery(listValence, listGate, listCoordFrenet,vertices,faces):
     return 1
         
 def patchDiscovery3(listValence,firstGate,listCoordFrenet,vertices,faces):
-    fifoGate.append(firstGate)
-    
     # Boucle de parcours de la mesh
     while fifoGate != []:
         
