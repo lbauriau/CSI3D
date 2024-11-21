@@ -26,14 +26,14 @@ def decimating_conquest(vertices, faces):
         frontVertex = entryGate.getFrontVertex()
 
         if (frontFace.flag == Flag.Conquered) or (frontFace.flag == Flag.ToBeRemoved):
-            print("    x Patch already computed")
+            print(f"    x Patch already computed flag:({frontFace.flag})")
             # Nothing to do, patch we enter has already been or cannot be conquered
             # We discard the current gate
             fifoGate.pop(0)
-        elif (frontVertex.flag == Flag.Free) and (frontVertex.getValence() <= 6) and frontVertex.getValence() == len(frontVertex.attachedFaces):
+        elif (frontVertex.flag == Flag.Free) and (frontVertex.getValence() <= 6) and not frontVertex.isOnTheBoundary():
             print(f"    V Patch to decim found (frontVertex valence = {frontVertex.getValence()}, len(frontVertex.attachedFaces) = {len(frontVertex.attachedFaces)})")
             # The corresponding patch will be decimated and retriangulated
-            patch = Patch(patchId, entryGate, False)
+            patch = Patch(patchId, entryGate, False, faces)
             patchs.append(patch)
             patchsBeRemoved.append(patch)
 
@@ -113,9 +113,14 @@ def decimating_conquest(vertices, faces):
             fifoGate += outputGates
             fifoGate.pop(0)
 
-        elif ((frontVertex.flag == Flag.Free) and (frontVertex.getValence() > 6)) or (frontVertex.flag == Flag.Conquered) or frontVertex.getValence() != len(frontVertex.attachedFaces):
+        elif ((frontVertex.flag == Flag.Free) and (frontVertex.getValence() > 6)) or (frontVertex.flag == Flag.Conquered) or frontVertex.isOnTheBoundary():
             # The front face must be a null patch; we declare it conquered,
             frontFace.flag = Flag.Conquered
+
+            if ((entryGate.vertices[0].tag == Tag.Plus) and (entryGate.vertices[1].tag == Tag.Plus)):
+                frontVertex.tag = Tag.Minus
+            else:
+                frontVertex.tag = Tag.Plus
 
             print(f"    O Null patch found (frontVertex valence = {frontVertex.getValence()}, len(frontVertex.attachedFaces) = {len(frontVertex.attachedFaces)})")
 

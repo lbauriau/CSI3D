@@ -20,12 +20,11 @@ class Compressor(obja.Model):
         self.vertices = vertices
         self.faces = faces
 
-    def compress(self, output):
+    def compress(self, outputFile):
 
-        operations = []
         i = 0
 
-        while i <= 3:
+        while i < 4:
             print("")
             print("_________________________________________________________________________________________________")
             print(f"Itteration {i+1}")
@@ -35,43 +34,55 @@ class Compressor(obja.Model):
             print(f"Decimation {i+1} results:")
             print(f"    - Vertex 2br {[p.center_vertex.id for p in patch2BeRemoved]}")
             print(f"    - Firstgates: {[v.id for v in firstgate_decim.vertices]}")
-            print(f"    - faces: {[f.id for f in self.faces]}")
+            # print(f"    - faces: {[f.id for f in self.faces]}")
             print("")
 
             retriangulation_conquest(self.vertices, self.faces, patch2BeRemoved)
 
+
             print(f"Retriangulation {i+1} results:")
-            print(f"    - retri faces: {[f.id for f in self.faces]}")
+            # print(f"    - retri faces: {[f.id for f in self.faces]}")
 
             #Bn, firstgate_clean = cleaningConquest(self.vertices, self.faces)
 
+            for face in self.faces:
+                face.flag = Flag.Free
+            for vertex in self.vertices:
+                vertex.flag = Flag.Free
+                vertex.tag = None
+
+            with open(f'../TestModels/OutputIntermediaire{i+1}.obj', 'w') as outputIntm:
+                createOutputModel(self.faces, self.vertices, outputIntm), f'../TestModels/OutputIntermediaire{i+1}.obj'
+
             i += 1
 
-        # Iterate through the vertex
-        for (vertex_index, vertex) in enumerate(self.vertices):
-            # Delete the vertex
-            vertex.id = vertex_index
-            operations.append(('vertex', vertex_index, np.array([vertex.x,vertex.y,vertex.z], np.double)))
+        return createOutputModel(self.faces, self.vertices, outputFile)
 
-        # Iterate through the faces
-        for (face_index, face) in enumerate(self.faces):
+def createOutputModel(faces, vertices, outputFile):
+    operations = []
 
-            operations.append(('face', face_index, obja.Face(face.vertices[0].id,
-                                                             face.vertices[1].id,
-                                                             face.vertices[2].id,True)))
+    # Iterate through the vertex
+    for (_, vertex) in enumerate(vertices):
+        #print(f"Adding vertex {vertex.id} to obja: {vertex.x} {vertex.y} {vertex.z}")
+        operations.append(('vertex', vertex.id, np.array([vertex.x,vertex.y,vertex.z], np.double)))
 
+    # Iterate through the faces
+    for (_, face) in enumerate(faces):
+        #print(f"Adding face {face.id} to obja: vertices {[v.id for v in face.vertices]}")
+        operations.append(('face', face.id, obja.Face(face.vertices[0].id,
+                                                            face.vertices[1].id,
+                                                            face.vertices[2].id,True)))
+    #  Write the result in output file
+    output_model = obja.Output(outputFile, random_color= False)
+    for (ty, index, value) in operations:
+        if ty == "vertex":
+            output_model.add_vertex(index, value)
+        elif ty == "face":
+            output_model.add_face(index, value)
+        else:
+            output_model.edit_vertex(index, value)
 
-        #  Write the result in output file
-        output_model = obja.Output(output, random_color= False)
-        for (ty, index, value) in operations:
-            if ty == "vertex":
-                output_model.add_vertex(index, value)
-            elif ty == "face":
-                output_model.add_face(index, value)
-            else:
-                output_model.edit_vertex(index, value)
-
-        return output_model
+    return output_model
 
 def main(args=None):
     if args is None:
@@ -89,7 +100,7 @@ def main(args=None):
 
     base = os.path.splitext(FILE_PATH)[0]
     print(base)
-    with open(f'{base}{'2.obj'}', 'w') as output:
+    with open(f'{base}2.obj', 'w') as output:
        model.compress(output)
 
 

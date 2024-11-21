@@ -46,16 +46,20 @@ class Vertex:
         return isinstance(other, Vertex) and self.id == other.id
 
     def getValence(self):
-        #Renvoie la valence d'un vertex
-        #cette dernière correspond au nombre de faces liées à ce vertex
+        # Renvoie la valence d'un vertex
+        # cette dernière correspond au nombre de faces liées à ce vertex
         connected_vertices = np.array([f.vertices for f in self.attachedFaces]).flatten()
         connected_vertices = [v.id for v in connected_vertices]
         #print(f"GET VALENCE index {self.id} {np.unique(connected_vertices)} = {len(np.unique(connected_vertices)) - 1}")
         return len(np.unique(connected_vertices)) - 1
 
+    def isOnTheBoundary(self):
+        # Un vertex est sur le bord si sa valence n'est pas égale au nombre de faces liées à ce vertex
+        return self.getValence() != len(self.attachedFaces)
+
 class Patch:
 
-    def __init__(self, id, entry_gate, isNullPatch):
+    def __init__(self, id, entry_gate, isNullPatch, faces = None):
 
         self.id = id
         self.isNullPatch = isNullPatch
@@ -92,7 +96,13 @@ class Patch:
                     current_vertex = self.boundingVertices[-1]
                     faceslist.remove(face)
                 else:
-                    print("ERROR --------------------------------------------------------------")
+                    error_string = f"ERROR bounding vertex: looking for vertex {current_vertex.id} in:"
+                    for f in faceslist:
+                        error_string += f"\n face {f.id}: {[v.id for v in f.vertices]} "
+                    error_string += f"\n in patch with center vertex {self.center_vertex.id} which has this faces connected:"
+                    for f in self.center_vertex.attachedFaces:
+                        error_string += f"\n face {f.id}: {[v.id for v in f.vertices]} {"" if f in faces else "not"} in faces general list"
+                    raise Exception(error_string)
                     break
             # print(f"Gate: verts = {[v.id for v in self.entry_gate.vertices]}")
             # print(f"bounding verts = {[v.id for v in self.boundingVertices]}")
@@ -126,7 +136,7 @@ class Patch:
                         ]
             if(len(second_outside_face) != 0):
                 second_outside_face = second_outside_face[0]
-                output_gates.append(Gate(second_outside_face, [ gate.vertices[1], frontVertex ]))
+                output_gates.append(Gate(second_outside_face, [ frontVertex, gate.vertices[1] ]))
         else:
             #On commence par le vertex de "droite" de l'entry gate
             current_vertex = self.entry_gate.vertices[1]
@@ -149,7 +159,7 @@ class Patch:
                 if(len(next_outside_face) != 0):
                     next_outside_face = next_outside_face[0]
                     #On ajoute la nouvelle gate aux output_gates
-                    output_gates.append(Gate(next_outside_face, [current_vertex, next_vertex]))
+                    output_gates.append(Gate(next_outside_face, [next_vertex, current_vertex]))
                 current_vertex = next_vertex
                 
         return output_gates
@@ -247,10 +257,10 @@ def getFirstGate(faces):
     random_face = faces[random.randint(0, len(faces)-1)]
     
     #On récupère le premier vertex de la face
-    first_vertex = random_face.vertices[1]
+    first_vertex = random_face.vertices[0]
     
     #On récupère le deuxième vertex de la face
-    second_vertex = random_face.vertices[2]
+    second_vertex = random_face.vertices[1]
     
     return Gate(random_face, [first_vertex, second_vertex])
 

@@ -14,37 +14,40 @@ def retriangulation_conquest(vertices, faces, listPatchBeRemoved):
 
 
 
-def removedVertex(patchToRemoved,vertices, faces):
-    vertexPatch = patchToRemoved.boundingVertices
+def removedVertex(patchToRemove,vertices, faces):
+
+    print(f"    Computing patch with center vertex {patchToRemove.center_vertex.id} (valence {patchToRemove.getValence()}).")# Available faces: {[f.id for f in faces]}")
+
+    patchBoundingVertices = patchToRemove.boundingVertices
     
     # On récupère le vertex à enlever ainsi que ces faces attachées
-    vertexToRemoved = patchToRemoved.center_vertex
-    vertexRemovedAttachedFaces = vertexToRemoved.attachedFaces
+    vertexToRemove = patchToRemove.center_vertex
+    attachedFacesToRemove = vertexToRemove.attachedFaces
+
+    print(f"    faces to remove {[f.id for f in attachedFacesToRemove]}")
 
     
     # On récupère la valence du vertex centrale pour pouvoir retrianguler
-    valence = patchToRemoved.getValence()
+    valence = patchToRemove.getValence()
     
     # On récupère la face d'entrée pour faire correctement le flag
-    faceEntry = patchToRemoved.entry_gate
-    [vertex1,vertex2] = faceEntry.vertices
+    entryGate = patchToRemove.entry_gate
+    [vertex1,vertex2] = entryGate.vertices
     flag1 = vertex1.flag
     flag2 = vertex2.flag
-
-    print(f"    Computing patch with center vertex {patchToRemoved.center_vertex.id}.")# Available faces: {[f.id for f in faces]}")
 
     match valence :
         case 3 :
             print(f"        case {valence}")
-            newFace = Face(getNextElementIndex(faces), Flag.Conquered,vertexPatch)
+            newFace = Face(getNextElementIndex(faces), Flag.Conquered,patchBoundingVertices)
             print(f"        New faces {[v.id for v in newFace.vertices]}")
             faces.append(newFace)
-            for vertex in vertexPatch:
+            for vertex in patchBoundingVertices:
                 vertex.attachedFaces.append(newFace)
         case 4 :
             print(f"        case {valence}")
-            vertex4 = vertexPatch.pop()
-            vertex3 = vertexPatch.pop()
+            vertex4 = patchBoundingVertices.pop()
+            vertex3 = patchBoundingVertices.pop()
             match vertex2.tag:
                 case Tag.Minus:     
                     next_face_id = getNextElementIndex(faces)
@@ -68,11 +71,13 @@ def removedVertex(patchToRemoved,vertices, faces):
                     vertex4.attachedFaces += [newFace1, newFace2]
                     print(f"        New faces f1: {[v.id for v in newFace1.vertices]} f2: {[v.id for v in newFace2.vertices]}")
                     faces += [newFace1,newFace2]
+                case _ :
+                    print(f"    Error : Tag incorecte tag vert2 {vertex2.tag} ---------------------------------")
         case 5 :
             print(f"        case {valence}")
-            vertex5 = vertexPatch.pop()
-            vertex4 = vertexPatch.pop()
-            vertex3 = vertexPatch.pop()
+            vertex5 = patchBoundingVertices.pop()
+            vertex4 = patchBoundingVertices.pop()
+            vertex3 = patchBoundingVertices.pop()
             match vertex1.tag, vertex2.tag:
                 case _,Tag.Minus:
                     next_face_id = getNextElementIndex(faces)
@@ -113,12 +118,14 @@ def removedVertex(patchToRemoved,vertices, faces):
                     vertex5.attachedFaces.append(newFace3)
                     print(f"        New faces f1: {[v.id for v in newFace1.vertices]} f2: {[v.id for v in newFace2.vertices]} f3: {[v.id for v in newFace3.vertices]}")
                     faces += [newFace1,newFace2, newFace3]
+                case _ :
+                    print(f"    Error : Tag incorecte tag vert1 {vertex1.tag} vert2 {vertex2.tag} ---------------------------------")
         case 6 :
             print(f"        case {valence}")
-            vertex6 = vertexPatch.pop()
-            vertex5 = vertexPatch.pop()
-            vertex4 = vertexPatch.pop()
-            vertex3 = vertexPatch.pop()
+            vertex6 = patchBoundingVertices.pop()
+            vertex5 = patchBoundingVertices.pop()
+            vertex4 = patchBoundingVertices.pop()
+            vertex3 = patchBoundingVertices.pop()
             match vertex2.tag:
                 case Tag.Minus:
                     next_face_id = getNextElementIndex(faces)
@@ -150,16 +157,21 @@ def removedVertex(patchToRemoved,vertices, faces):
                     vertex6.attachedFaces += [newFace1, newFace3, newFace4]
                     print(f"        New faces f1: {[v.id for v in newFace1.vertices]} f2: {[v.id for v in newFace2.vertices]} f3: {[v.id for v in newFace3.vertices]} f4: {[v.id for v in newFace4.vertices]}")
                     faces += [newFace1,newFace2, newFace3, newFace4]
+                case _ :
+                    print(f"    Error : Tag incorecte tag vert2 {vertex2.tag} ---------------------------------")
         case _ :
-                print(" Error : ce cas n'est possible.")
+                print("    Error : ce cas n'est possible.")
             
     # On enlève les faces attachées au vertex dans la liste de toutes les faces
-    for face in vertexRemovedAttachedFaces:
-        print(f"        removed face {face.id}")
-        faces.remove(face)
-        for vertex in vertexPatch : 
+    while attachedFacesToRemove:
+        face = attachedFacesToRemove.pop(0)
+        if face in faces:
+            faces.remove(face)
+            print(f"        removed face {face.id} from main list")
+        for vertex in face.vertices: 
             if face in vertex.attachedFaces:
                 vertex.attachedFaces.remove(face)
+                print(f"        removed face {face.id} from vertex {vertex.id} attached faces")
     
     # On enlève le vertex de la liste des vertex
-    vertices.remove(vertexToRemoved)
+    vertices.remove(vertexToRemove)
