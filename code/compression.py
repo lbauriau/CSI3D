@@ -20,6 +20,13 @@ class Compressor(obja.Model):
         self.vertices = vertices
         self.faces = faces
 
+    def resetFlagTagParam(self):
+        for face in self.faces:
+            face.flag = Flag.Free
+        for vertex in self.vertices:
+            vertex.flag = Flag.Free
+            vertex.tag = None
+
     def compress(self, outputFile):
 
         i = 0
@@ -39,17 +46,16 @@ class Compressor(obja.Model):
 
             retriangulation_conquest(self.vertices, self.faces, patch_to_be_removed)
 
+            # remise à zéros des flag et tag des vertices et faces après la conquête de décimation
+            self.resetFlagTagParam()
 
             print(f"Retriangulation {i+1} results:")
             # print(f"    - retri faces: {[f.id for f in self.faces]}")
 
             #Bn, firstgate_clean = cleaningConquest(self.vertices, self.faces)
 
-            for face in self.faces:
-                face.flag = Flag.Free
-            for vertex in self.vertices:
-                vertex.flag = Flag.Free
-                vertex.tag = None
+            # remise à zéros des flag et tag des vertices et faces après la conquête de cleaning
+            #self.resetFlagTagParam()
 
             with open(f'../TestModels/OutputIntermediaire{i+1}.obj', 'w') as outputIntm:
                 createOutputModel(self.faces, self.vertices, outputIntm), f'../TestModels/OutputIntermediaire{i+1}.obj'
