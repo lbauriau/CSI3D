@@ -27,17 +27,17 @@ class Compressor(obja.Model):
         while i < 4:
             print("")
             print("_________________________________________________________________________________________________")
-            print(f"Itteration {i+1}")
+            print(f"Iteration {i+1}")
             print("")
-            patch2BeRemoved, output_iter, firstgate_decim = decimating_conquest(self.vertices, self.faces)
+            patch_to_be_removed, output_iter, first_gate_decim = decimating_conquest(self.vertices, self.faces)
 
             print(f"Decimation {i+1} results:")
-            print(f"    - Vertex 2br {[p.center_vertex.id for p in patch2BeRemoved]}")
-            print(f"    - Firstgates: {[v.id for v in firstgate_decim.vertices]}")
+            print(f"    - Vertex 2br {[p.center_vertex.id for p in patch_to_be_removed]}")
+            print(f"    - Firstgates: {[v.id for v in first_gate_decim.vertices]}")
             # print(f"    - faces: {[f.id for f in self.faces]}")
             print("")
 
-            retriangulation_conquest(self.vertices, self.faces, patch2BeRemoved)
+            retriangulation_conquest(self.vertices, self.faces, patch_to_be_removed)
 
 
             print(f"Retriangulation {i+1} results:")

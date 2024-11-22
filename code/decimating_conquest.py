@@ -2,70 +2,70 @@ from decimateur_utils import *
 
 def decimating_conquest(vertices, faces):
     print("________ Decimation ________")
-    patchId = 0
+    patch_id = 0
     patchs = []
-    patchsBeRemoved = []
+    patchs_be_removed = []
     
 
-    fifoGate = []
+    fifo_gate = []
 
     output = []
-    frenetCoordinates = []
+    frenet_coordinates = []
     
-    firstGate = getFirstGate(faces)
-    gateVertices = firstGate.vertices
-    gateVertices[0].tag = Tag.Plus
-    gateVertices[1].tag = Tag.Minus
+    first_gate = getFirstGate(faces)
+    gate_vertices = first_gate.vertices
+    gate_vertices[0].tag = Tag.Plus
+    gate_vertices[1].tag = Tag.Minus
 
-    fifoGate.append(firstGate)
-    while fifoGate != []:
-        entryGate = fifoGate[0]
-        print(f"    current gate = {[v.id for v in entryGate.vertices]}, front face = {entryGate.frontFace.id}, front vertex = {entryGate.getFrontVertex().id}")
+    fifo_gate.append(first_gate)
+    while fifo_gate != []:
+        entry_gate = fifo_gate[0]
+        print(f"    current gate = {[v.id for v in entry_gate.vertices]}, front face = {entry_gate.front_face.id}, front vertex = {entry_gate.getFrontVertex().id}")
         
-        frontFace = entryGate.frontFace
-        frontVertex = entryGate.getFrontVertex()
+        front_face = entry_gate.front_face
+        front_vertex = entry_gate.getFrontVertex()
 
-        if (frontFace.flag == Flag.Conquered) or (frontFace.flag == Flag.ToBeRemoved):
-            print(f"    x Patch already computed flag:({frontFace.flag})")
+        if (front_face.flag == Flag.Conquered) or (front_face.flag == Flag.ToBeRemoved):
+            print(f"    x Patch already computed flag:({front_face.flag})")
             # Nothing to do, patch we enter has already been or cannot be conquered
             # We discard the current gate
-            fifoGate.pop(0)
-        elif (frontVertex.flag == Flag.Free) and (frontVertex.getValence() <= 6) and not frontVertex.isOnTheBoundary():
-            print(f"    V Patch to decim found (frontVertex valence = {frontVertex.getValence()}, len(frontVertex.attachedFaces) = {len(frontVertex.attachedFaces)})")
+            fifo_gate.pop(0)
+        elif (front_vertex.flag == Flag.Free) and (front_vertex.getValence() <= 6) and not front_vertex.isOnTheBoundary():
+            print(f"    V Patch to decim found (front_vertex valence = {front_vertex.getValence()}, len(front_vertex.attached_faces) = {len(front_vertex.attached_faces)})")
             # The corresponding patch will be decimated and retriangulated
-            patch = Patch(patchId, entryGate, False, faces)
+            patch = Patch(patch_id, entry_gate, False, faces)
             patchs.append(patch)
-            patchsBeRemoved.append(patch)
+            patchs_be_removed.append(patch)
 
             # The front vertex is flagged ToBeRemoved
-            frontVertex.flag = Flag.ToBeRemoved
-            incidentFaces = frontVertex.attachedFaces
-            valence = frontVertex.getValence()
+            front_vertex.flag = Flag.ToBeRemoved
+            incident_faces = front_vertex.attached_faces
+            valence = front_vertex.getValence()
 
             # Its neighboring vertices are flagged Conquered
-            neighboringVertices = patch.boundingVertices
-            for neighborVertex in neighboringVertices:
-                neighborVertex.flag = Flag.Conquered
+            neighboring_vertices = patch.bounding_vertices
+            for neighbor_vertex in neighboring_vertices:
+                neighbor_vertex.flag = Flag.Conquered
                 
             
             # And its incident faces are flagged ToBeRemoved
-            for face in incidentFaces:
+            for face in incident_faces:
                 face.flag = Flag.ToBeRemoved
 
             # Tag bounding vertices of the patch
-            gateVertices = entryGate.vertices
+            gate_vertices = entry_gate.vertices
             i = 0
-            for nv in neighboringVertices:
-                if nv not in gateVertices:
+            for nv in neighboring_vertices:
+                if nv not in gate_vertices:
                     if (nv.tag == None):
                         match valence:
                             case 3:
-                                if ((gateVertices[0].tag == Tag.Plus) and (gateVertices[1].tag == Tag.Plus)):
+                                if ((gate_vertices[0].tag == Tag.Plus) and (gate_vertices[1].tag == Tag.Plus)):
                                     nv.tag = Tag.Minus
                                 else:
                                     nv.tag = Tag.Plus
                             case 4:
-                                if ((gateVertices[0].tag == Tag.Minus) and (gateVertices[1].tag == Tag.Plus) or ((gateVertices[0].tag == Tag.Plus) and (gateVertices[1].tag == Tag.Plus))) :
+                                if ((gate_vertices[0].tag == Tag.Minus) and (gate_vertices[1].tag == Tag.Plus) or ((gate_vertices[0].tag == Tag.Plus) and (gate_vertices[1].tag == Tag.Plus))) :
                                     if i%2:
                                         nv.tag = Tag.Minus
                                     else:
@@ -76,7 +76,7 @@ def decimating_conquest(vertices, faces):
                                     else:
                                         nv.tag = Tag.Minus
                             case 5:
-                                if ((gateVertices[0].tag == Tag.Plus) and (gateVertices[1].tag == Tag.Plus)) :
+                                if ((gate_vertices[0].tag == Tag.Plus) and (gate_vertices[1].tag == Tag.Plus)) :
                                     if i%2:
                                         nv.tag = Tag.Minus
                                     else:
@@ -87,7 +87,7 @@ def decimating_conquest(vertices, faces):
                                     else:
                                         nv.tag = Tag.Minus
                             case 6:
-                                if ((gateVertices[0].tag == Tag.Minus) and (gateVertices[1].tag == Tag.Plus) or ((gateVertices[0].tag == Tag.Plus) and (gateVertices[1].tag == Tag.Plus))) :
+                                if ((gate_vertices[0].tag == Tag.Minus) and (gate_vertices[1].tag == Tag.Plus) or ((gate_vertices[0].tag == Tag.Plus) and (gate_vertices[1].tag == Tag.Plus))) :
                                     if i%2:
                                         nv.tag = Tag.Minus
                                     else:
@@ -105,44 +105,44 @@ def decimating_conquest(vertices, faces):
             output.append(valence)
 
             # Approximating Frenet coordinates
-            frenet = patch.getFrenetCoordinates(frontVertex)
-            frenetCoordinates.append(frenet)
+            frenet = patch.getFrenetCoordinates(front_vertex)
+            frenet_coordinates.append(frenet)
             
             # And the v-1 output gates are generated and pushed to the fifo queue
-            outputGates = patch.getOutputGates()
-            fifoGate += outputGates
-            fifoGate.pop(0)
+            output_gates = patch.getOutputGates()
+            fifo_gate += output_gates
+            fifo_gate.pop(0)
 
-        elif ((frontVertex.flag == Flag.Free) and (frontVertex.getValence() > 6)) or (frontVertex.flag == Flag.Conquered) or frontVertex.isOnTheBoundary():
+        elif ((front_vertex.flag == Flag.Free) and (front_vertex.getValence() > 6)) or (front_vertex.flag == Flag.Conquered) or front_vertex.isOnTheBoundary():
             # The front face must be a null patch; we declare it conquered,
-            frontFace.flag = Flag.Conquered
+            front_face.flag = Flag.Conquered
 
-            if ((entryGate.vertices[0].tag == Tag.Plus) and (entryGate.vertices[1].tag == Tag.Plus)):
-                frontVertex.tag = Tag.Minus
+            if ((entry_gate.vertices[0].tag == Tag.Plus) and (entry_gate.vertices[1].tag == Tag.Plus)):
+                front_vertex.tag = Tag.Minus
             else:
-                frontVertex.tag = Tag.Plus
+                front_vertex.tag = Tag.Plus
 
-            print(f"    O Null patch found (frontVertex valence = {frontVertex.getValence()}, len(frontVertex.attachedFaces) = {len(frontVertex.attachedFaces)})")
+            print(f"    O Null patch found (front_vertex valence = {front_vertex.getValence()}, len(front_vertex.attached_faces) = {len(front_vertex.attached_faces)})")
 
             # A code null patch is generated. Not mandatory see 4.2 section
             # output.append(0)
 
             # And the two other output gates of the triangle are pushed onto the fifo queue
-            patch = Patch(patchId, entryGate, True)
+            patch = Patch(patch_id, entry_gate, True)
             patchs.append(patch)
-            outputGates = patch.getOutputGates()
-            fifoGate += outputGates
+            output_gates = patch.getOutputGates()
+            fifo_gate += output_gates
 
             #  We discard the current gate, and proceed to the next gate available on the fifo queue
-            fifoGate.pop(0)
+            fifo_gate.pop(0)
 
-        if len(fifoGate) > 0:
+        if len(fifo_gate) > 0:
             print("")
 
 
     print("________ Fin Decimation ________")
     print("")
-    return patchsBeRemoved, output, firstGate
+    return patchs_be_removed, output, first_gate
 
 
 
