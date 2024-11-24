@@ -76,9 +76,13 @@ class Patch:
                         return f
                 return None
 
+            # Les premiers vertex de bounding_vertices sont ceux de la gate
             self.bounding_vertices += self.entry_gate.vertices
 
+            # Récupération des faces constituant le patch
             faces_list = self.center_vertex.attached_faces[:]
+
+            # Les vertices de la front_face de la gate étant déjà dans bounding vertex cette face est déjà traitée
             faces_list.remove(self.entry_gate.front_face)
             current_vertex = self.entry_gate.vertices[1]
 
@@ -86,6 +90,7 @@ class Patch:
             # print( "Triage des bounding vertex...")
             while faces_list:
                 # print(f"faces_list{[f.id for f in faces_list]}")
+                # Récuperation de la face non traitée suivante
                 face = findNextFace(faces_list, current_vertex)
 
                 if face is not None:
