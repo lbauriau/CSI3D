@@ -10,6 +10,9 @@ from retriangulation import retriangulation_conquest
 from decoding import discovery, patchDiscovery
 
 class Decompressor(obja.Model):
+    """
+    Sous-classe de la classe Model d'obja afin de pouvoir écrire dans un fichier .obja
+    """
 
     def __init__(self):
         super().__init__()
@@ -17,11 +20,19 @@ class Decompressor(obja.Model):
 
 
     def parse_file(self, path):
+        """
+        Override de la fonction afin d'utiliser les classe Face et Vertex que nous avons créés.
+
+        :param [in] path: chemin d'accès au fichier .obj
+        """
         vertices, faces = initialize(path)
         self.vertices = vertices
         self.faces = faces
 
     def resetFlagTagParam(self):
+        """
+        Remet à zeros les Flag et Tag de l'ensemble des vertex et des faces.
+        """
         for face in self.faces:
             face.flag = Flag.Free
         for vertex in self.vertices:
@@ -29,6 +40,11 @@ class Decompressor(obja.Model):
             vertex.tag = None
 
     def decompress(self, outputFile):
+        """
+
+        Effectue la compression puis de décompression d'une mesh(.obj)
+        :param [in/out] outputFile: Fichier dans lequel sont écritent les instructions obja
+        """
 
         # déclaration des variables remplies par l'encoder et utilisées par le decoder
         list_valence = []
@@ -92,6 +108,13 @@ class Decompressor(obja.Model):
         return createOutputModel(self.faces, self.vertices, outputFile)
 
 def createOutputModel(faces, vertices, outputFile):
+    """
+    Écrit dans le fichier de sortie les instructions obja
+
+    :param [in] faces: ensemble des faces de la mesh.
+    :param [in] vertices: ensemble des vertices de la mesh.
+    :param [in/out] outputFile: Fichier dans lequel sont écritent les instructions obja
+    """
     operations = []
 
     # Iterate through the vertex

@@ -3,6 +3,11 @@
 import decimateur_utils
 
 def initialize(nom_fichier):
+    """
+    Parse un fichier .obj afin d'en extraire des objets "maison" Vertex et Face.
+    :param nom_fichier: nom du fichier de travail
+    :return: Une liste de Vertex et de Face
+    """
 
     with open(nom_fichier, 'r') as f:
         lines = f.readlines()

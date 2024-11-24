@@ -3,6 +3,17 @@ from decimateur_utils import *
 # Fonction globale de retriangulation
 
 def discovery(list_valence, list_gate, list_coord_frenet,vertices,faces):
+    """
+    Fonction effectuant des passes de patch-discovery3 et patch-discovery afin de décompresser la mesh.
+
+    :param [in] list_valence: liste des valences renvoyées par le compresseur sur un schéme de [Bn An ... B1 A1]
+                où les listes Bi sont renvoyées par la cleaning conquest et les Ai par la decimating conquest
+    :param [in] list_gate: liste des premières gates utilisées dans les différentes conquest afin de ressortir les Ai et Bi
+    :param [in] list_coord_frenet: liste des coordonnées de frenet associées aux points de valence list_valence
+                list_coord_frenet[i] est associée à list_valence[i]
+    :param [in/out] vertices: ensemble des vertices présents dans la mesh
+    :param [in/out] faces:  ensemble des faces présentes dans la mesh
+    """
     while (list_gate!=[]):
         # On reverse le cleaning
         gate3 = list_gate.pop()
@@ -13,7 +24,13 @@ def discovery(list_valence, list_gate, list_coord_frenet,vertices,faces):
         patchDiscovery(list_valence,gate_glob,list_coord_frenet, vertices, faces)
 
 def creationVertex(frenet, patch):
+    """
+    Créer le vertex central d'un patch grâce à ses coordonnées de frenet.
 
+    :param [in] frenet: coordonées de frenet
+    :param [in] patch: patch sur lequel s'appuie les coordonées de frenet
+    :return: le vertex central d'un patch
+    """
     [n,t1,t2,b] = patch.getFrenet()
     vr_aux = b + frenet[0]*t1 + frenet[1]*t2 + frenet[2]*n
     vr = Vertex( 0, [], Flag.Conquered, Tag.Plus, vr_aux[0], vr_aux[1], vr_aux[2])
@@ -21,6 +38,13 @@ def creationVertex(frenet, patch):
     return vr
 
 def creationFaces(list_vertices, center_vertex, faces):
+    """
+    créer les différentes faces liant le center_vertex aux autres vertices du patch.
+
+    :param [in] list_vertices: liste des bounding vertices d'un patch
+    :param [in] center_vertex:  vertex central du patch
+    :param [in/out] faces: ensemble des faces de la mesh
+    """
     valence = len(list_vertices)
     for i in range (valence):
         idx = getNextElementIndex(faces)
@@ -33,15 +57,36 @@ def creationFaces(list_vertices, center_vertex, faces):
         center_vertex.attached_faces.append(new_face)
 
 def supprimerFacesMultiple(list_face, faces):
-    for face in list_face:
-        supprimerFace(face)
-        faces.remove(face)
+    """
+    Supprime les références aux faces de list_faces
 
-def supprimerFace(face):
+    :param [in] list_face: liste de face devant être supprimées
+    :param [in/out] faces: ensemble des faces de la mesh
+
+    """
+    for face in list_face:
+        supprimerFace(face, faces)
+
+def supprimerFace(face, faces):
+    """
+    Supprime les références à la face en paramètre
+
+    :param face: face à supprimer
+    :param [in/out] faces: ensemble des faces de la mesh
+    """
     for vertex in face.vertices:
         vertex.attached_faces.remove(face)
+    faces.remove(face)
 
-def ajouterGates(output_gates, patch, fifo):
+def ajouterGatesCleaning(output_gates, patch, fifo):
+    """
+    Ajoute les gates dans le cas d'un patch-discovery3
+    où les gates ne sont pas forcément les sorties de Patch.getOutputGates()
+
+    :param [in] output_gates: les gates de sortie de Patch.getOutputGates()
+    :param [in] patch: le patch considéré
+    :param [in/out] fifo: la pile fifo de gates
+    """
     if patch.is_null_patch:
         fifo += output_gates
     else:
@@ -53,6 +98,18 @@ def ajouterGates(output_gates, patch, fifo):
 
 def patchDiscovery3(list_valence,first_gate,list_coord_frenet,vertices,faces):
 
+    """
+    Effectue la découverte de patch comme si nous étions dans une cleaning conquest.
+
+    :param [in] list_valence: liste des valences renvoyées par le compresseur sur un schéme de [Bn An ... B1 A1]
+                où les listes Bi sont renvoyées par la cleaning conquest et les Ai par la decimating conquest
+    :param [in] first_gate: gate de départ de la conquest
+    :param [in] list_coord_frenet: liste des coordonnées de frenet associées aux points de valence list_valence
+                list_coord_frenet[i] est associée à list_valence[i]
+    :param [in/out] vertices: ensemble des vertices présents dans la mesh
+    :param [in/out] faces:  ensemble des faces présentes dans la mesh
+    """
+
     fifo_gate = []
     
     fifo_gate.append(first_gate)
@@ -63,7 +120,7 @@ def patchDiscovery3(list_valence,first_gate,list_coord_frenet,vertices,faces):
         entry_gate = fifo_gate.pop(0)
         list_vertices = entry_gate.vertices
         # On récupère la face commune est free aux deux vertices 
-        face_vertices = [entry_gate.front_face]
+        face_vertices = entry_gate.front_face
         
         if face_vertices[0].flag == Flag.Free: # Juste une vérif mais normalement que des free
             # On récupère la valence et les coordonnées du point à ajouter
@@ -107,7 +164,7 @@ def patchDiscovery3(list_valence,first_gate,list_coord_frenet,vertices,faces):
             vert3.attached_faces.removed(face_vertices)
             faces.remove(face_vertices)
             """
-            supprimerFacesMultiple(face_vertices,faces)
+            supprimerFace(face_vertices,faces)
 
             # tagging des vertexs
             for vertex in list_vertices:
@@ -123,9 +180,22 @@ def patchDiscovery3(list_valence,first_gate,list_coord_frenet,vertices,faces):
                 fifo_gate.append(Gate(face13,[vert1,vert3]))
             """
             output_gates = patch_add.getOutputGates()
-            ajouterGates(output_gates,patch_add,fifo_gate)
+            ajouterGatesCleaning(output_gates,patch_add,fifo_gate)
     
 def patchDiscovery(list_valence,first_gate,list_coord_frenet,vertices,faces):
+
+    """
+    Effectue la découverte de patch comme si nous étions dans une decimation conquest.
+
+    :param [in] list_valence: liste des valences renvoyées par le compresseur sur un schéme de [Bn An ... B1 A1]
+                où les listes Bi sont renvoyées par la cleaning conquest et les Ai par la decimating conquest
+    :param [in] first_gate: gate de départ de la conquest
+    :param [in] list_coord_frenet: liste des coordonnées de frenet associées aux points de valence list_valence
+                list_coord_frenet[i] est associée à list_valence[i]
+    :param [in/out] vertices: ensemble des vertices présents dans la mesh
+    :param [in/out] faces:  ensemble des faces présentes dans la mesh
+    """
+
     fifo_gate = []
     fifo_gate.append(first_gate)
 
@@ -284,11 +354,11 @@ def patchDiscovery(list_valence,first_gate,list_coord_frenet,vertices,faces):
             vertex.flag = Flag.Conquered
 
         output_gates = patch_add.getOutputGates()
-        ajouterGates(output_gates,patch_add,fifo_gate)
-    return 0                
+        fifo_gate += output_gates
+    return 0
 
 
-
+"""
 def getFaceWithVertices(vert1,vert2):
     n = len(vert1.attached_faces)
     for i in range(n):
@@ -299,8 +369,17 @@ def getFaceWithVertices(vert1,vert2):
         if (cond1 or cond2 or cond3):
             return vert1.attached_faces[i]
     return 0
+"""
 
 def getThirdVertex(face, vert1, vert2):
+    """
+    Renvoie le 3e vertex d'une face.
+
+    :param [in] face: la face dont on veut connaitre le 3e vertex
+    :param [in] vert1: L'un des 3 vertex d'une face
+    :param [in] vert2: Un vertex appartenant à la face différent de vert1
+    :return: Le dernier vertex de la face
+    """
     for i in range(3):
         aux_vert = face.vertices[i]
         if (aux_vert!= vert1 and aux_vert!= vert2):

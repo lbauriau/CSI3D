@@ -20,6 +20,9 @@ class Face:
         
     
     def getNormal(self):
+        """
+        Renvoie la normale de la face
+        """
         list_vertex = self.vertices
         v1 = list_vertex[0]
         v2 = list_vertex[1]
@@ -46,6 +49,9 @@ class Vertex:
         return isinstance(other, Vertex) and self.id == other.id
 
     def getValence(self):
+        """
+        Renvoie la valence du vertex
+        """
         # Renvoie la valence d'un vertex
         # cette dernière correspond au nombre de faces liées à ce vertex
         connected_vertices = np.array([f.vertices for f in self.attached_faces]).flatten()
@@ -54,6 +60,9 @@ class Vertex:
         return len(np.unique(connected_vertices)) - 1
 
     def isOnTheBoundary(self):
+        """
+         Le vertex est-il sur un bord ?
+        """
         # Un vertex est sur le bord si sa valence n'est pas égale au nombre de faces liées à ce vertex
         return self.getValence() != len(self.attached_faces)
 
@@ -71,6 +80,13 @@ class Patch:
             self.bounding_vertices = [ entry_gate.vertices[0], entry_gate.vertices[1], entry_gate.getFrontVertex() ]
         else:
             def findNextFace(list_faces, vertex):
+                """
+                Renvoie la prochaine face du patch dans le sens anti_horraire
+
+                :param [in] list_faces: liste des faces que nous voulons sonder.
+                :param [in] vertex: le bounding vertex dont on veut connaître la face "à sa droite"
+                :return: La face demandée si elle existe et None sinon
+                """
                 for f in list_faces:
                     if vertex in f.vertices and self.center_vertex in f.vertices:
                         return f
@@ -114,12 +130,19 @@ class Patch:
             # print("")
 
     def getValence(self):
+        """
+        Renvoie la valence du patch qui n'est autre que la valence du vertex central
+        """
         #La valence d'un patch est en réalité la valence du vertex central, et
         #cette dernière correspond au nombre de faces liées à ce vertex.
         return self.center_vertex.getValence()
 
     #Retourne une liste ordonnée des outputs gates
     def getOutputGates(self):
+        """
+        Renvoie l'ensemble des gates orientées vers l'extérieur du patch (hormis la gate d'entrée)
+        dans le sens anti-horraires en commançant par la gate " à droite" de la gate d'entrée.
+        """
         output_gates = []
 
         if self.is_null_patch:
@@ -170,6 +193,9 @@ class Patch:
         return output_gates
 
     def getNormal(self):
+        """
+        Renvoie la normale du patch
+        """
         n = len(self.bounding_vertices)
         N = [0,0,0]
         for i in range (0,n-1):
@@ -187,6 +213,9 @@ class Patch:
         return N
 
     def getBaricentre(self):
+        """
+        Renvoie le baricentre du patch
+        """
         n = len(self.bounding_vertices)
         b = np.array([0,0,0])
         for i in range (0,n-1):
@@ -196,6 +225,9 @@ class Patch:
         return b
 
     def getFrenet(self):
+        """
+        Renvoie la base de frenet du patch
+        """
         N = self.getNormal()
         b = self.getBaricentre()
         t1 = getFirstTangent(self,N)
@@ -203,6 +235,12 @@ class Patch:
         return [b,t1,t2,N]
 
     def getFrenetCoordinates(self, vertex):
+        """
+        Renvoie les coordonées de frenet dans ce patch d'un vertex
+
+        :param [in] vertex: le vertex dont on veut connaître les coordonnées de frenet
+        :return: les coordonnées dans le repère de frenet du patch du vertex
+        """
         # Frenet Frame
         [b,t1,t2,N] = self.getFrenet()
 
@@ -220,6 +258,13 @@ class Patch:
         return [alpha, beta, gamma]
 
 def getFirstTangent(patch,N):
+    """
+    Renvoie la première tangente du repère de frenet du patch connaissant sa normale
+
+    :param [in] patch: patch dont nous voulons connaitre la 1ere tangente
+    :param [in] N: Normale du patch
+    :return: la premiere tangente au sens de frenet
+    """
     vecteur_gate = patch.entry_gate
     v1 = vecteur_gate.vertices[0]
     v2 = vecteur_gate.vertices[1]
@@ -230,6 +275,13 @@ def getFirstTangent(patch,N):
     return t1
 
 def getSecondTangent(N,t1):
+    """
+    Renvoie la seconde tangente du repère de frenet du patch connaissant sa normale et sa 1ere tangente
+
+    :param [in] N:  normale du patch
+    :param [in] t1: 1ere tangente du patch
+    :return: 2nd tangente du patch
+    """
     t2 = np.cross(N,t1)
     return t2
 
@@ -240,6 +292,9 @@ class Gate:
         self.vertices = vertices
 
     def getFrontVertex(self):
+        """
+        Renvoie le vertex de la front_face n'étant pas dans les vertices de la gate.
+        """
         front_vertex = None
         for v in self.front_face.vertices:
             if v not in self.vertices:
@@ -247,6 +302,12 @@ class Gate:
         return front_vertex
 
 def printVertsAndFaces(vertices,faces):
+    """
+    Fonction d'affichage à des fins de débug
+
+    :param [in] vertices: ensemble des vertices de la mesh.
+    :param [in] faces: ensemble des faces de la mesh
+    """
     for j in range (len(vertices)):
         vert = vertices[j]
         print(f"Vertex {j}: id:{vert.id} flag:{vert.flag} tag:{vert.tag} pos:{vert.x},{vert.y},{vert.z} attached_faces_id:{[i.id for i in vert.attached_faces]}")
@@ -256,6 +317,11 @@ def printVertsAndFaces(vertices,faces):
         print(f"Face {j}: id:{face.id} flag:{face.flag} verts_id:{[v.id for v in face.vertices]}")
 
 def getFirstGate(faces):
+    """
+    Renvoie une gate au hasard grâce au module random.randint
+    :param [in] faces: ensemble des faces de la mesh
+    :return: Une gate tirée au hasard
+    """
     #On choisit la "première" face stockée dans la liste de faces,
     #mais on pourrait aussi tirer une face au hasard, ce qui
     ##serait un peu plus couteux.
@@ -270,9 +336,14 @@ def getFirstGate(faces):
     return Gate(random_face, [first_vertex, second_vertex])
 
 def getNextElementIndex(faces_or_verts):
+    """
+    Renvoie le prochain id disponible afin d'en assurer l'unicité
+    :param faces_or_verts: ensemble des faces OU des vertices
+    :return: un id jamais utilisé
+    """
     element_idx = [f.id for f in faces_or_verts]
     return max(element_idx) + 1
-
+"""
 def getFaceWithVertices(vert1,vert2):
     n = len(vert1.attached_faces)
     for i in range(n):
@@ -280,14 +351,28 @@ def getFaceWithVertices(vert1,vert2):
             if (vert1.attached_face[1].flag == Flag.Free):
                 return vert1.attached_faces[i]
     return 0
-
+"""
 def getAdjacentFace(face, vert1, vert2):
+    """
+    Renvoie la face adjacente à face par l'edge [vert1, vert2]
+    :param [in] face: face dont on veut connaitre la face adjacente
+    :param [in] vert1 et vert2: vertex constituant l'edge d'adjacence
+
+    :return: la face adjacente si elle existe, None sinon.
+    """
     for f in vert1.attached_faces:
         if f in vert2.attached_faces and f.id != face.id:
             return f
     return None
 
 def getThirdVertex(face, vert1, vert2):
+    """
+    Renvoie le 3e vertex d'une face.
+    :param face:  face de travail
+    :param vert1 et vert2: vertices connus
+
+    :return: le 3e vertices de la face
+    """
     for i in range(3):
         aux_vert = face.vertices[i]
         if (aux_vert!= vert1 and aux_vert!= vert2):
