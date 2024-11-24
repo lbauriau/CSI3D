@@ -70,7 +70,7 @@ def cleaningConquest(vertices, faces):
             new_face = Face(0,Flag.Conquered,current_patch.bounding_vertices)
             faces.append(new_face)
 
-        elif(current_patch.center_vertex.flag == Flag.Free) and (current_patch.getValence() > 3) or current_patch.center_vertex.flag == Tag.Conquered:
+        elif(current_patch.center_vertex.flag == Flag.Free) and (current_patch.getValence() > 3) or current_patch.center_vertex.flag == Flag.Conquered:
             print(f"    -> null patch found")
             current_gate.front_face.flag == Flag.Conquered
             fifo += Patch(0,current_gate, True).getOutputGates()
