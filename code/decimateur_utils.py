@@ -281,6 +281,12 @@ def getFaceWithVertices(vert1,vert2):
                 return vert1.attached_faces[i]
     return 0
 
+def getAdjacentFace(face, vert1, vert2):
+    for f in vert1.attached_faces:
+        if f in vert2.attached_faces and f.id != face.id:
+            return f
+    return None
+
 def getThirdVertex(face, vert1, vert2):
     for i in range(3):
         aux_vert = face.vertices[i]
