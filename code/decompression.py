@@ -29,16 +29,6 @@ class Decompressor(obja.Model):
         self.vertices = vertices
         self.faces = faces
 
-    def resetFlagTagParam(self):
-        """
-        Remet à zeros les Flag et Tag de l'ensemble des vertex et des faces.
-        """
-        for face in self.faces:
-            face.flag = Flag.Free
-        for vertex in self.vertices:
-            vertex.flag = Flag.Free
-            vertex.tag = None
-
     def decompress(self, outputFile):
         """
 
@@ -50,61 +40,65 @@ class Decompressor(obja.Model):
         list_valence = []
         liste_frenet = []
         first_gates = []
+        removed_vertex_indices = []
 
         ##############################
         # Boucle de compression
         ##############################
         i = 0
 
-        while i < 4:
+        while i < 10:
             print("")
             print("_________________________________________________________________________________________________")
             print(f"Iteration {i+1}")
             print("")
-            patch_to_be_removed, output_iter, first_gate_decim, f_coord_decim = decimating_conquest(self.vertices, self.faces)
+            output_iter, first_gate_decim, f_coord_decim, d_removed_vertex_indices = decimating_conquest(self.vertices, self.faces)
 
             print(f"Decimation {i+1} results:")
-            print(f"    - Vertex 2br {[p.center_vertex.id for p in patch_to_be_removed]}")
-            print(f"    - First_gates: {[v.id for v in first_gate_decim.vertices]}")
-            # print(f"    - faces: {[f.id for f in self.faces]}")
+            #print(f"    - Firstgates: {[v.id for v in first_gate_decim.vertices]}")
             print("")
 
-            retriangulation_conquest(self.vertices, self.faces, patch_to_be_removed)
-
             # remise à zéros des flag et tag des vertices et faces après la conquête de décimation
-            self.resetFlagTagParam()
+            resetFlagTagParam(self.vertices, self.faces)
 
             # Récupération des variables à transmettre au decoder pour le cleaning
             list_valence = output_iter + list_valence
             liste_frenet = f_coord_decim + liste_frenet
-            first_gates.append(first_gate_decim)
+            first_gates = [first_gate_decim] + first_gates
+            removed_vertex_indices = d_removed_vertex_indices + removed_vertex_indices
 
             print(f"Retriangulation {i+1} results:")
             # print(f"    - retri faces: {[f.id for f in self.faces]}")
 
-            #Bn, first_gate_clean, f_coord_clean = cleaningConquest(self.vertices, self.faces)
+            Bn, first_gate_clean, f_coord_clean, c_removed_vertex_indices = cleaningConquest(self.vertices, self.faces)
 
             # remise à zéros des flag et tag des vertices et faces après la conquête de cleaning
-            #self.resetFlagTagParam()
+            resetFlagTagParam(self.vertices, self.faces)
 
             # Récupération des variables à transmettre au decoder pour le cleaning
-            #list_valence = Bn + list_valence
-            #liste_frenet = f_coord_clean + liste_frenet
-            #first_gates.append(first_gate_clean)
+            list_valence = Bn + list_valence
+            liste_frenet = f_coord_clean + liste_frenet
+            first_gates = [first_gate_clean] + first_gates
+            removed_vertex_indices = c_removed_vertex_indices + removed_vertex_indices
 
             with open(f'../TestModels/OutputIntermediaire{i+1}.obj', 'w') as outputIntm:
-                createOutputModel(self.faces, self.vertices, outputIntm), f'../TestModels/OutputIntermediaire{i+1}.obj'
+                createOutputModel(self.faces, self.vertices, outputIntm), f'../TestModels/CompressionIntermediaire{i+1}.obj'
 
             i += 1
 
         ##############################
         # Boucle de decompression
         ##############################
+        print("")
+        print("_________________ Decoding _________________")
+        print("")
 
-        #discovery(list_valence,first_gates,liste_frenet,self.vertices, self.faces)
+        print(f"valences: {list_valence}")
 
-        #Test sans le cleaning
-        patchDiscovery(list_valence,first_gates,liste_frenet, self.vertices, self.faces)
+        discovery(list_valence,first_gates,liste_frenet, removed_vertex_indices,self.vertices, self.faces)
+
+        with open(f'../TestModels/Decompress.obj', 'w') as outputIntm:
+                createOutputModel(self.faces, self.vertices, outputIntm), f'../TestModels/Decompress.obj'
 
         return createOutputModel(self.faces, self.vertices, outputFile)
 

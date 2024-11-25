@@ -20,13 +20,6 @@ class Compressor(obja.Model):
         self.vertices = vertices
         self.faces = faces
 
-    def resetFlagTagParam(self):
-        for face in self.faces:
-            face.flag = Flag.Free
-        for vertex in self.vertices:
-            vertex.flag = Flag.Free
-            vertex.tag = None
-
     def compress(self, outputFile):
 
         i = 0
@@ -36,7 +29,7 @@ class Compressor(obja.Model):
             print("_________________________________________________________________________________________________")
             print(f"Iteration {i+1}")
             print("")
-            output_iter, first_gate_decim, f_coord_decim = decimating_conquest(self.vertices, self.faces)
+            output_iter, first_gate_decim, f_coord_decim, d_removed_vertex_indices = decimating_conquest(self.vertices, self.faces)
 
             print(f"Decimation {i+1} results:")
             #print(f"    - Vertex 2br {[p.center_vertex.id for p in patch_to_be_removed]}")
@@ -47,15 +40,15 @@ class Compressor(obja.Model):
             #retriangulation_conquest(self.vertices, self.faces, patch_to_be_removed)
 
             # remise à zéros des flag et tag des vertices et faces après la conquête de décimation
-            self.resetFlagTagParam()
+            resetFlagTagParam(self.vertices, self.faces)
 
             print(f"Retriangulation {i+1} results:")
             # print(f"    - retri faces: {[f.id for f in self.faces]}")
 
-            Bn, first_gate_clean, f_coord_clean = cleaningConquest(self.vertices, self.faces)
+            Bn, first_gate_clean, f_coord_clean, c_removed_vertex_indices = cleaningConquest(self.vertices, self.faces)
 
             # remise à zéros des flag et tag des vertices et faces après la conquête de cleaning
-            self.resetFlagTagParam()
+            resetFlagTagParam(self.vertices, self.faces)
 
             with open(f'../TestModels/OutputIntermediaire{i+1}.obj', 'w') as outputIntm:
                 createOutputModel(self.faces, self.vertices, outputIntm), f'../TestModels/OutputIntermediaire{i+1}.obj'

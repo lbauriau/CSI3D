@@ -68,67 +68,68 @@ class Vertex:
 
 class Patch:
 
-    def __init__(self, id, entry_gate, is_null_patch, faces = None):
+    def __init__(self, id, entry_gate, is_null_patch, bounding_vertices = None):
 
         self.id = id
-
         self.is_null_patch = is_null_patch
         self.entry_gate = entry_gate
         self.center_vertex = entry_gate.getFrontVertex()
-        self.bounding_vertices = []
 
-        if is_null_patch:
-            self.bounding_vertices = [ entry_gate.vertices[0], entry_gate.vertices[1], entry_gate.getFrontVertex() ]
+        if bounding_vertices is not None:
+            self.bounding_vertices = bounding_vertices
         else:
-            def findNextFace(list_faces, vertex):
-                """
-                Renvoie la prochaine face du patch dans le sens anti_horraire
+            self.bounding_vertices = []
+            if is_null_patch:
+                self.bounding_vertices = [ entry_gate.vertices[0], entry_gate.vertices[1], entry_gate.getFrontVertex() ]
+            else:
+                def findNextFace(list_faces, vertex):
+                    """
+                    Renvoie la prochaine face du patch dans le sens anti_horraire
 
-                :param [in] list_faces: liste des faces que nous voulons sonder.
-                :param [in] vertex: le bounding vertex dont on veut connaître la face "à sa droite"
-                :return: La face demandée si elle existe et None sinon
-                """
-                for f in list_faces:
-                    if vertex in f.vertices and self.center_vertex in f.vertices:
-                        return f
-                return None
+                    :param [in] list_faces: liste des faces que nous voulons sonder.
+                    :param [in] vertex: le bounding vertex dont on veut connaître la face "à sa droite"
+                    :return: La face demandée si elle existe et None sinon
+                    """
+                    for f in list_faces:
+                        if vertex in f.vertices and self.center_vertex in f.vertices:
+                            return f
+                    return None
 
-            # Les premiers vertex de bounding_vertices sont ceux de la gate
-            self.bounding_vertices += self.entry_gate.vertices
+                # Les premiers vertex de bounding_vertices sont ceux de la gate
+                self.bounding_vertices += self.entry_gate.vertices
 
-            # Récupération des faces constituant le patch
-            faces_list = self.center_vertex.attached_faces[:]
+                # Récupération des faces constituant le patch
+                faces_list = self.center_vertex.attached_faces[:]
 
-            # Les vertices de la front_face de la gate étant déjà dans bounding vertex cette face est déjà traitée
-            faces_list.remove(self.entry_gate.front_face)
-            current_vertex = self.entry_gate.vertices[1]
+                # Les vertices de la front_face de la gate étant déjà dans bounding vertex cette face est déjà traitée
+                faces_list.remove(self.entry_gate.front_face)
+                current_vertex = self.entry_gate.vertices[1]
 
-            # print("")
-            # print( "Triage des bounding vertex...")
-            while faces_list:
-                # print(f"faces_list{[f.id for f in faces_list]}")
-                # Récuperation de la face non traitée suivante
-                face = findNextFace(faces_list, current_vertex)
+                # print("")
+                # print( "Triage des bounding vertex...")
+                while faces_list:
+                    # print(f"faces_list{[f.id for f in faces_list]}")
+                    # Récuperation de la face non traitée suivante
+                    face = findNextFace(faces_list, current_vertex)
 
-                if face is not None:
-                    for v in face.vertices:
-                        if v not in self.bounding_vertices and v!= self.center_vertex:
-                            self.bounding_vertices.append(v)
+                    if face is not None:
+                        for v in face.vertices:
+                            if v not in self.bounding_vertices and v!= self.center_vertex:
+                                self.bounding_vertices.append(v)
 
-                    current_vertex = self.bounding_vertices[-1]
-                    faces_list.remove(face)
-                else:
-                    error_string = f"ERROR bounding vertex: looking for vertex {current_vertex.id} in:"
-                    for f in faces_list:
-                        error_string += f"\n face {f.id}: {[v.id for v in f.vertices]} "
-                    error_string += f"\n in patch with center vertex {self.center_vertex.id} which has this faces connected:"
-                    for f in self.center_vertex.attached_faces:
-                        error_string += f"\n face {f.id}: {[v.id for v in f.vertices]} {"" if f in faces else "not"} in faces general list"
-                    raise Exception(error_string)
-                    break
-            # print(f"Gate: verts = {[v.id for v in self.entry_gate.vertices]}")
-            # print(f"bounding verts = {[v.id for v in self.bounding_vertices]}")
-            # print("")
+                        current_vertex = self.bounding_vertices[-1]
+                        faces_list.remove(face)
+                    else:
+                        error_string = f"ERROR bounding vertex: looking for vertex {current_vertex.id} in:"
+                        for f in faces_list:
+                            error_string += f"\n face {f.id}: {[v.id for v in f.vertices]} "
+                        error_string += f"\n in patch with center vertex {self.center_vertex.id} which has this faces connected:"
+                        for f in self.center_vertex.attached_faces:
+                            error_string += f"\n face {f.id}: {[v.id for v in f.vertices]} in faces general list"
+                        raise Exception(error_string)
+                # print(f"Gate: verts = {[v.id for v in self.entry_gate.vertices]}")
+                # print(f"bounding verts = {[v.id for v in self.bounding_vertices]}")
+                # print("")
 
     def getValence(self):
         """
@@ -136,7 +137,7 @@ class Patch:
         """
         #La valence d'un patch est en réalité la valence du vertex central, et
         #cette dernière correspond au nombre de faces liées à ce vertex.
-        return self.center_vertex.getValence()
+        return self.center_vertex.getValence() if not self.is_null_patch else 0
 
     #Retourne une liste ordonnée des outputs gates
     def getOutputGates(self):
@@ -192,6 +193,55 @@ class Patch:
                 current_vertex = next_vertex
 
         return output_gates
+
+    def setTags(self):
+        i = 0
+        gate_vertices = self.entry_gate.vertices
+        for nv in self.bounding_vertices:
+            if nv not in gate_vertices:
+                if (nv.tag == None):
+                    match self.getValence:
+                        case 3:
+                            if ((gate_vertices[0].tag == Tag.Plus) and (gate_vertices[1].tag == Tag.Plus)):
+                                nv.tag = Tag.Minus
+                            else:
+                                nv.tag = Tag.Plus
+                        case 4:
+                            if ((gate_vertices[0].tag == Tag.Minus) and (gate_vertices[1].tag == Tag.Plus) or ((gate_vertices[0].tag == Tag.Plus) and (gate_vertices[1].tag == Tag.Plus))) :
+                                if i%2:
+                                    nv.tag = Tag.Minus
+                                else:
+                                    nv.tag = Tag.Plus
+                            else: 
+                                if i%2:
+                                    nv.tag = Tag.Plus
+                                else:
+                                    nv.tag = Tag.Minus
+                        case 5:
+                            if ((gate_vertices[0].tag == Tag.Plus) and (gate_vertices[1].tag == Tag.Plus)) :
+                                if i%2:
+                                    nv.tag = Tag.Minus
+                                else:
+                                    nv.tag = Tag.Plus
+                            else: 
+                                if i%2:
+                                    nv.tag = Tag.Plus
+                                else:
+                                    nv.tag = Tag.Minus
+                        case 6:
+                            if ((gate_vertices[0].tag == Tag.Minus) and (gate_vertices[1].tag == Tag.Plus) or ((gate_vertices[0].tag == Tag.Plus) and (gate_vertices[1].tag == Tag.Plus))) :
+                                if i%2:
+                                    nv.tag = Tag.Minus
+                                else:
+                                    nv.tag = Tag.Plus
+                            else: 
+                                if i%2:
+                                    nv.tag = Tag.Plus
+                                else:
+                                    nv.tag = Tag.Minus
+                        case _:
+                            pass 
+                i +=1
 
     def getNormal(self):
         """
@@ -385,13 +435,23 @@ def isSameFace(face1, face2):
         is_same &= v.id in [vert.id for vert in face2.vertices]
     return is_same
 
+def resetFlagTagParam(faces, vertices):
+        """
+        Remet à zeros les Flag et Tag de l'ensemble des vertex et des faces.
+        """
+        for face in faces:
+            face.flag = Flag.Free
+        for vertex in vertices:
+            vertex.flag = Flag.Free
+            vertex.tag = None
+
 def canBeDecimated(entry_gate, faces):
     front_face = entry_gate.front_face
     front_vertex = entry_gate.getFrontVertex()
     valence = front_vertex.getValence()
 
     if not front_vertex.isOnTheBoundary():
-        patch = Patch(0,entry_gate, False, faces)
+        patch = Patch(0,entry_gate, False)
 
         patch_bounding_vertices = patch.bounding_vertices
 

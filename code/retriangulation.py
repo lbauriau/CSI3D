@@ -18,7 +18,7 @@ def removedVertex(patch_to_remove,vertices, faces):
 
     print(f"    Computing patch with center vertex {patch_to_remove.center_vertex.id} (valence {patch_to_remove.getValence()}).")# Available faces: {[f.id for f in faces]}").
 
-    patch_bounding_vertices = patch_to_remove.bounding_vertices
+    patch_bounding_vertices = patch_to_remove.bounding_vertices[:]
     
     # On récupère le vertex à enlever ainsi que ces faces attachées
     vertex_to_remove = patch_to_remove.center_vertex
@@ -174,4 +174,5 @@ def removedVertex(patch_to_remove,vertices, faces):
                 print(f"        removed face {face.id} from vertex {vertex.id} attached faces")
     
     # On enlève le vertex de la liste des vertex
+    print(f"    removed vertex {vertex_to_remove.id}")
     vertices.remove(vertex_to_remove)
