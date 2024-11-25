@@ -71,6 +71,7 @@ class Patch:
     def __init__(self, id, entry_gate, is_null_patch, faces = None):
 
         self.id = id
+
         self.is_null_patch = is_null_patch
         self.entry_gate = entry_gate
         self.center_vertex = entry_gate.getFrontVertex()
