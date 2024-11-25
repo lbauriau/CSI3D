@@ -87,7 +87,7 @@ def cleaningConquest(vertices, faces):
         fifo.pop(0)
         print(f"len(fifo) = {len(fifo)}")
 
-    return bn, first_gate
+    return bn, first_gate, fren_coord
         
 #(v,f) = func_init.initialize('../TestModels/3ValenceShape.obj')
 #(v,f) = func_init.initialize('../TestModels/TestCleaningSimple.obj')

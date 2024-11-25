@@ -61,7 +61,7 @@ class Decompressor(obja.Model):
             print("_________________________________________________________________________________________________")
             print(f"Iteration {i+1}")
             print("")
-            patch_to_be_removed, output_iter, first_gate_decim = decimating_conquest(self.vertices, self.faces)
+            patch_to_be_removed, output_iter, first_gate_decim, f_coord_decim = decimating_conquest(self.vertices, self.faces)
 
             print(f"Decimation {i+1} results:")
             print(f"    - Vertex 2br {[p.center_vertex.id for p in patch_to_be_removed]}")
@@ -76,19 +76,20 @@ class Decompressor(obja.Model):
 
             # Récupération des variables à transmettre au decoder pour le cleaning
             list_valence = output_iter + list_valence
-            #liste_frenet =
+            liste_frenet = f_coord_decim + liste_frenet
             first_gates.append(first_gate_decim)
 
             print(f"Retriangulation {i+1} results:")
             # print(f"    - retri faces: {[f.id for f in self.faces]}")
 
-            #Bn, first_gate_clean = cleaningConquest(self.vertices, self.faces)
+            #Bn, first_gate_clean, f_coord_clean = cleaningConquest(self.vertices, self.faces)
 
             # remise à zéros des flag et tag des vertices et faces après la conquête de cleaning
             #self.resetFlagTagParam()
 
             # Récupération des variables à transmettre au decoder pour le cleaning
             #list_valence = Bn + list_valence
+            #liste_frenet = f_coord_clean + liste_frenet
             #first_gates.append(first_gate_clean)
 
             with open(f'../TestModels/OutputIntermediaire{i+1}.obj', 'w') as outputIntm:

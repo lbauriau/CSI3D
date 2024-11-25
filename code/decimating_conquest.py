@@ -144,7 +144,7 @@ def decimating_conquest(vertices, faces):
 
     print("________ Fin Decimation ________")
     print("")
-    return patchsBeRemoved, output, firstGate, frenetCoordinates
+    return patchs_be_removed, output, first_gate, frenet_coordinates
 
     
 
