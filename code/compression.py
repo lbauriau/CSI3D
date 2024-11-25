@@ -52,10 +52,10 @@ class Compressor(obja.Model):
             print(f"Retriangulation {i+1} results:")
             # print(f"    - retri faces: {[f.id for f in self.faces]}")
 
-            #Bn, firstgate_clean = cleaningConquest(self.vertices, self.faces)
+            Bn, firstgate_clean = cleaningConquest(self.vertices, self.faces)
 
             # remise à zéros des flag et tag des vertices et faces après la conquête de cleaning
-            #self.resetFlagTagParam()
+            self.resetFlagTagParam()
 
             with open(f'../TestModels/OutputIntermediaire{i+1}.obj', 'w') as outputIntm:
                 createOutputModel(self.faces, self.vertices, outputIntm), f'../TestModels/OutputIntermediaire{i+1}.obj'

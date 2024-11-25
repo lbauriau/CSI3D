@@ -18,26 +18,26 @@ def cleaningConquest(vertices, faces):
     while len(fifo) > 0:
         
         current_gate = fifo[0]
+        front_face = current_gate.front_face
+        front_vertex = current_gate.getFrontVertex()
+        valence = front_vertex.getValence()
         print("")
         print("    ________ New patch ________")
         print(f"    current gate vertices: {[v.id for v in current_gate.vertices]} front face id:{current_gate.front_face.id}")
-        
-        #On crée une instance de l'objet patch à l'aide de la gate traitï¿½e
-        current_patch = Patch(0,current_gate, False)
-        
-        print(f"    current patch center vertex:{current_patch.center_vertex.id} valence: {current_patch.getValence()}")
-        
         #On vérifie si le patch a déjà été conquis et si oui, on retire la gate de la fifo.
-        if(current_gate.front_face.flag == Flag.Conquered) or (current_gate.front_face.flag == Flag.ToBeRemoved):
+        if(front_face.flag == Flag.Conquered) or (front_face.flag == Flag.ToBeRemoved):
             print(f"    Patch has already been conquered")
 
-        elif(current_patch.center_vertex.flag == Flag.Free) and (current_patch.getValence() <= 3):
+        elif(front_vertex.flag == Flag.Free) and (valence <= 3) and not front_vertex.isOnTheBoundary():
+            #On crée une instance de l'objet patch à l'aide de la gate traitï¿½e
+            current_patch = Patch(0,current_gate, False)
+            print(f"    current patch center vertex:{current_patch.center_vertex.id} valence: {current_patch.getValence()}")
             print(f"    Patch is going to be simplified")
 
             #On traite le patch
-            current_gate.center_vertex.flag = Flag.ToBeRemoved #Pas très utile, car on traite le patch ici
+            current_patch.center_vertex.flag = Flag.ToBeRemoved #Pas très utile, car on traite le patch ici
             bn.append(current_patch.getValence())
-            fren_coord.append(current_patch.getFrenetCoordinates())
+            fren_coord.append(current_patch.getFrenetCoordinates(front_vertex))
 
             #On récupère les portes de sorties liées à ce patch
             output_gates = current_patch.getOutputGates()
@@ -56,23 +56,29 @@ def cleaningConquest(vertices, faces):
                 print(f"        -> outputgate added to fifo: {[g for g in gates]}")
 
             #Suppression des éléments du patch
-            for face in current_patch.center_vertex.attached_faces:
+            while front_vertex.attached_faces:
+                face = front_vertex.attached_faces.pop(0)
                 #On enlève toutes les références aux faces que l'on enlève
-                for v in current_patch.bounding_vertices:
+                for v in face.vertices:
                     if face in v.attached_faces:
                         v.attached_faces.remove(face)
                 #On enlève la face de la liste des faces
                 faces.remove(face)
-                #On enlève le center vertex de la liste des vertices
-                vertices.remove(current_patch.center_vertex)
-                print(f"    -> Removed vertex: {current_patch.center_vertex.id}")
+
+            #On enlève le center vertex de la liste des vertices
+            vertices.remove(front_vertex)
+            print(f"    -> Removed vertex: {front_vertex.id}")
             #On ajoute la nouvelle face à la liste des faces
-            new_face = Face(0,Flag.Conquered,current_patch.bounding_vertices)
+            if(len(current_patch.bounding_vertices) != 3):
+                raise Exception(f"{[v.id for v in current_patch.bounding_vertices]}")
+            new_face = Face(getNextElementIndex(faces),Flag.Conquered,current_patch.bounding_vertices)
+            for v in current_patch.bounding_vertices:
+                v.attached_faces.append(new_face)
             faces.append(new_face)
 
-        elif(current_patch.center_vertex.flag == Flag.Free) and (current_patch.getValence() > 3) or current_patch.center_vertex.flag == Flag.Conquered:
+        elif((front_vertex.flag == Flag.Free) and (valence > 3)) or front_vertex.flag == Flag.Conquered or front_vertex.isOnTheBoundary():
             print(f"    -> null patch found")
-            current_gate.front_face.flag == Flag.Conquered
+            front_face.flag = Flag.Conquered
             fifo += Patch(0,current_gate, True).getOutputGates()
             bn.append(0)
             
@@ -80,7 +86,7 @@ def cleaningConquest(vertices, faces):
         fifo.pop(0)
         print(f"len(fifo) = {len(fifo)}")
 
-        return bn, first_gate
+    return bn, first_gate
         
 #(v,f) = func_init.initialize('../TestModels/3ValenceShape.obj')
 #(v,f) = func_init.initialize('../TestModels/TestCleaningSimple.obj')

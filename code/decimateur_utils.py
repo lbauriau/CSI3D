@@ -54,6 +54,9 @@ class Vertex:
         """
         # Renvoie la valence d'un vertex
         # cette dernière correspond au nombre de faces liées à ce vertex
+        for f in self.attached_faces:
+            print(f"{[v.id for v in f.vertices]}")
+
         connected_vertices = np.array([f.vertices for f in self.attached_faces]).flatten()
         connected_vertices = [v.id for v in connected_vertices]
         #print(f"GET VALENCE index {self.id} {np.unique(connected_vertices)} = {len(np.unique(connected_vertices)) - 1}")
