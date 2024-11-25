@@ -125,7 +125,7 @@ def decimating_conquest(vertices, faces):
             #  We discard the current gate, and proceed to the next gate available on the fifo queue
             fifoGate.pop(0)
 
-    return patchsBeRemoved, output, firstGate
+    return patchsBeRemoved, output, firstGate, frenetCoordinates
 
 
 

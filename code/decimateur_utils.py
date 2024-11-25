@@ -46,7 +46,7 @@ class Patch:
     def __init__(self, id, entry_gate, isNullPatch):
 
         self.id = id
-        self.isNullPatch = isNullPatch;
+        self.isNullPatch = isNullPatch
         self.entry_gate = entry_gate
         self.center_vertex = entry_gate.getFrontVertex()
         self.boundingVertices = []
