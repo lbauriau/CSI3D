@@ -54,9 +54,6 @@ class Vertex:
         """
         # Renvoie la valence d'un vertex
         # cette dernière correspond au nombre de faces liées à ce vertex
-        for f in self.attached_faces:
-            print(f"{[v.id for v in f.vertices]}")
-
         connected_vertices = np.array([f.vertices for f in self.attached_faces]).flatten()
         connected_vertices = [v.id for v in connected_vertices]
         #print(f"GET VALENCE index {self.id} {np.unique(connected_vertices)} = {len(np.unique(connected_vertices)) - 1}")
@@ -380,3 +377,127 @@ def getThirdVertex(face, vert1, vert2):
         aux_vert = face.vertices[i]
         if (aux_vert!= vert1 and aux_vert!= vert2):
             return aux_vert
+
+def isSameFace(face1, face2):
+    is_same = True
+    for v in face1.vertices:
+        is_same &= v.id in [vert.id for vert in face2.vertices]
+    return is_same
+
+def canBeDecimated(entry_gate, faces):
+    front_face = entry_gate.front_face
+    front_vertex = entry_gate.getFrontVertex()
+    valence = front_vertex.getValence()
+
+    if not front_vertex.isOnTheBoundary():
+        patch = Patch(0,entry_gate, False, faces)
+
+        patch_bounding_vertices = patch.bounding_vertices
+
+        [vertex1,vertex2] = entry_gate.vertices
+
+        match valence :
+            case 3 :
+                new_face = Face(getNextElementIndex(faces), Flag.Conquered,patch_bounding_vertices)
+
+                matching_faces = [f for f in faces if isSameFace(f, new_face)]
+
+                return len(matching_faces) == 0
+            case 4 :
+                vertex4 = patch_bounding_vertices.pop()
+                vertex3 = patch_bounding_vertices.pop()
+                match vertex2.tag:
+                    case Tag.Minus:
+                        new_face1 = Face(0, Flag.Conquered,[vertex1,vertex2,vertex3])
+                        new_face2 = Face(0, Flag.Conquered,[vertex1,vertex3,vertex4])
+
+                        matching_faces = [f for f in faces if isSameFace(f, new_face1) or isSameFace(f, new_face2)]
+
+                        return len(matching_faces) == 0
+
+                    case Tag.Plus:          
+                        new_face1 = Face(0, Flag.Conquered,[vertex1,vertex2,vertex4])
+                        new_face2 = Face(0, Flag.Conquered,[vertex2,vertex3,vertex4])
+
+                        matching_faces = [f for f in faces if isSameFace(f, new_face1) or isSameFace(f, new_face2)]
+
+                        return len(matching_faces) == 0
+                    case _ :
+                        print(f"    Error : Tag incorecte tag vert2 {vertex2.tag} ---------------------------------")
+            case 5 :
+                vertex5 = patch_bounding_vertices.pop()
+                vertex4 = patch_bounding_vertices.pop()
+                vertex3 = patch_bounding_vertices.pop()
+                match vertex1.tag, vertex2.tag:
+                    case _,Tag.Minus:
+                        new_face1 = Face(0, Flag.Conquered,[vertex1,vertex2,vertex3])
+                        new_face2 = Face(0, Flag.Conquered,[vertex1,vertex3,vertex5])
+                        new_face3 = Face(0, Flag.Conquered,[vertex3,vertex4,vertex5])
+                        
+                        matching_faces = [f for f in faces if isSameFace(f, new_face1)
+                                          or isSameFace(f, new_face2)
+                                          or isSameFace(f, new_face3)]
+
+                        return len(matching_faces) == 0
+
+                    case Tag.Minus,Tag.Plus:
+                        new_face1 = Face(0, Flag.Conquered,[vertex1,vertex2,vertex5])
+                        new_face2 = Face(0, Flag.Conquered,[vertex2,vertex3,vertex5])
+                        new_face3 = Face(0, Flag.Conquered,[vertex3,vertex4,vertex5])
+                        
+                        matching_faces = [f for f in faces if isSameFace(f, new_face1)
+                                          or isSameFace(f, new_face2)
+                                          or isSameFace(f, new_face3)]
+
+                        return len(matching_faces) == 0
+
+                    case Tag.Plus,Tag.Plus:
+                        new_face1 = Face(0, Flag.Conquered,[vertex1,vertex2,vertex4])
+                        new_face2 = Face(0, Flag.Conquered,[vertex2,vertex3,vertex4])
+                        new_face3 = Face(0, Flag.Conquered,[vertex1,vertex4,vertex5])
+                        
+                        matching_faces = [f for f in faces if isSameFace(f, new_face1)
+                                          or isSameFace(f, new_face2)
+                                          or isSameFace(f, new_face3)]
+
+                        return len(matching_faces) == 0
+
+                    case _ :
+                        print(f"    Error : Tag incorecte tag vert1 {vertex1.tag} vert2 {vertex2.tag} ---------------------------------")
+            case 6 :
+                vertex6 = patch_bounding_vertices.pop()
+                vertex5 = patch_bounding_vertices.pop()
+                vertex4 = patch_bounding_vertices.pop()
+                vertex3 = patch_bounding_vertices.pop()
+                match vertex2.tag:
+                    case Tag.Minus:
+                        new_face1 = Face(0, Flag.Conquered,[vertex1,vertex2,vertex3])
+                        new_face2 = Face(0, Flag.Conquered,[vertex3,vertex4,vertex5])
+                        new_face3 = Face(0, Flag.Conquered,[vertex1,vertex5,vertex6])
+                        new_face4 = Face(0, Flag.Conquered,[vertex1,vertex3,vertex5])
+
+                        matching_faces = [f for f in faces if isSameFace(f, new_face1)
+                                          or isSameFace(f, new_face2)
+                                          or isSameFace(f, new_face3)
+                                          or isSameFace(f, new_face4)]
+
+                        return len(matching_faces) == 0
+
+                    case Tag.Plus:
+                        new_face1 = Face(0, Flag.Conquered,[vertex1,vertex2,vertex6])
+                        new_face2 = Face(0, Flag.Conquered,[vertex2,vertex3,vertex4])
+                        new_face3 = Face(0, Flag.Conquered,[vertex4,vertex5,vertex6])
+                        new_face4 = Face(0, Flag.Conquered,[vertex2,vertex4,vertex6])
+
+                        matching_faces = [f for f in faces if isSameFace(f, new_face1)
+                                          or isSameFace(f, new_face2)
+                                          or isSameFace(f, new_face3)
+                                          or isSameFace(f, new_face4)]
+
+                        return len(matching_faces) == 0
+
+                    case _ :
+                        print(f"    Error : Tag incorecte tag vert2 {vertex2.tag} ---------------------------------")
+            case _ :
+                print(f"    Error : valence: {valence}")
+                return False

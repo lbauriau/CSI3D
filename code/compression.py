@@ -31,7 +31,7 @@ class Compressor(obja.Model):
 
         i = 0
 
-        while i < 4:
+        while i < 10:
             print("")
             print("_________________________________________________________________________________________________")
             print(f"Iteration {i+1}")
@@ -52,7 +52,7 @@ class Compressor(obja.Model):
             print(f"Retriangulation {i+1} results:")
             # print(f"    - retri faces: {[f.id for f in self.faces]}")
 
-            Bn, firstgate_clean = cleaningConquest(self.vertices, self.faces)
+            #Bn, firstgate_clean = cleaningConquest(self.vertices, self.faces)
 
             # remise à zéros des flag et tag des vertices et faces après la conquête de cleaning
             self.resetFlagTagParam()

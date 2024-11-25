@@ -1,3 +1,4 @@
+from pickle import TRUE
 from decimateur_utils import *
 
 def decimating_conquest(vertices, faces):
@@ -24,14 +25,15 @@ def decimating_conquest(vertices, faces):
         
         front_face = entry_gate.front_face
         front_vertex = entry_gate.getFrontVertex()
+        valence = front_vertex.getValence()
 
         if (front_face.flag == Flag.Conquered) or (front_face.flag == Flag.ToBeRemoved):
             print(f"    x Patch already computed flag:({front_face.flag})")
             # Nothing to do, patch we enter has already been or cannot be conquered
             # We discard the current gate
             fifo_gate.pop(0)
-        elif (front_vertex.flag == Flag.Free) and (front_vertex.getValence() <= 6) and not front_vertex.isOnTheBoundary():
-            print(f"    V Patch to decim found (front_vertex valence = {front_vertex.getValence()}, len(front_vertex.attached_faces) = {len(front_vertex.attached_faces)})")
+        elif (front_vertex.flag == Flag.Free) and (valence <= 6) and not front_vertex.isOnTheBoundary() and canBeDecimated(entry_gate, faces):
+            print(f"    V Patch to decim found (front_vertex valence = {valence}, len(front_vertex.attached_faces) = {len(front_vertex.attached_faces)})")
             # The corresponding patch will be decimated and retriangulated
             patch = Patch(patch_id, entry_gate, False, faces)
             patchs.append(patch)
@@ -40,7 +42,7 @@ def decimating_conquest(vertices, faces):
             # The front vertex is flagged ToBeRemoved
             front_vertex.flag = Flag.ToBeRemoved
             incident_faces = front_vertex.attached_faces
-            valence = front_vertex.getValence()
+            valence = valence
 
             # Its neighboring vertices are flagged Conquered
             neighboring_vertices = patch.bounding_vertices
@@ -113,7 +115,7 @@ def decimating_conquest(vertices, faces):
             fifo_gate += output_gates
             fifo_gate.pop(0)
 
-        elif ((front_vertex.flag == Flag.Free) and (front_vertex.getValence() > 6)) or (front_vertex.flag == Flag.Conquered) or front_vertex.isOnTheBoundary():
+        elif ((front_vertex.flag == Flag.Free) and (valence > 6)) or (front_vertex.flag == Flag.Conquered) or front_vertex.isOnTheBoundary() or not canBeDecimated(entry_gate, faces):
             # The front face must be a null patch; we declare it conquered,
             front_face.flag = Flag.Conquered
 
@@ -122,7 +124,7 @@ def decimating_conquest(vertices, faces):
             else:
                 front_vertex.tag = Tag.Plus
 
-            print(f"    O Null patch found (front_vertex valence = {front_vertex.getValence()}, len(front_vertex.attached_faces) = {len(front_vertex.attached_faces)})")
+            print(f"    O Null patch found (front_vertex valence = {valence}, len(front_vertex.attached_faces) = {len(front_vertex.attached_faces)})")
 
             # A code null patch is generated. Not mandatory see 4.2 section
             # output.append(0)

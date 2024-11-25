@@ -24,11 +24,12 @@ def cleaningConquest(vertices, faces):
         print("")
         print("    ________ New patch ________")
         print(f"    current gate vertices: {[v.id for v in current_gate.vertices]} front face id:{current_gate.front_face.id}")
+
         #On vérifie si le patch a déjà été conquis et si oui, on retire la gate de la fifo.
         if(front_face.flag == Flag.Conquered) or (front_face.flag == Flag.ToBeRemoved):
             print(f"    Patch has already been conquered")
 
-        elif(front_vertex.flag == Flag.Free) and (valence <= 3) and not front_vertex.isOnTheBoundary():
+        elif(front_vertex.flag == Flag.Free) and (valence <= 3) and not front_vertex.isOnTheBoundary() and canBeDecimated(current_gate, faces):
             #On crée une instance de l'objet patch à l'aide de la gate traitï¿½e
             current_patch = Patch(0,current_gate, False)
             print(f"    current patch center vertex:{current_patch.center_vertex.id} valence: {current_patch.getValence()}")
@@ -76,7 +77,7 @@ def cleaningConquest(vertices, faces):
                 v.attached_faces.append(new_face)
             faces.append(new_face)
 
-        elif((front_vertex.flag == Flag.Free) and (valence > 3)) or front_vertex.flag == Flag.Conquered or front_vertex.isOnTheBoundary():
+        elif((front_vertex.flag == Flag.Free) and (valence > 3)) or front_vertex.flag == Flag.Conquered or front_vertex.isOnTheBoundary() or not canBeDecimated(current_gate, faces):
             print(f"    -> null patch found")
             front_face.flag = Flag.Conquered
             fifo += Patch(0,current_gate, True).getOutputGates()
