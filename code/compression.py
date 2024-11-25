@@ -36,15 +36,15 @@ class Compressor(obja.Model):
             print("_________________________________________________________________________________________________")
             print(f"Iteration {i+1}")
             print("")
-            patch_to_be_removed, output_iter, first_gate_decim, f_coord_decim = decimating_conquest(self.vertices, self.faces)
+            output_iter, first_gate_decim, f_coord_decim = decimating_conquest(self.vertices, self.faces)
 
             print(f"Decimation {i+1} results:")
-            print(f"    - Vertex 2br {[p.center_vertex.id for p in patch_to_be_removed]}")
+            #print(f"    - Vertex 2br {[p.center_vertex.id for p in patch_to_be_removed]}")
             print(f"    - Firstgates: {[v.id for v in first_gate_decim.vertices]}")
             # print(f"    - faces: {[f.id for f in self.faces]}")
             print("")
 
-            retriangulation_conquest(self.vertices, self.faces, patch_to_be_removed)
+            #retriangulation_conquest(self.vertices, self.faces, patch_to_be_removed)
 
             # remise à zéros des flag et tag des vertices et faces après la conquête de décimation
             self.resetFlagTagParam()

@@ -1,11 +1,10 @@
 from pickle import TRUE
 from decimateur_utils import *
+from retriangulation import *
 
 def decimating_conquest(vertices, faces):
     print("________ Decimation ________")
     patch_id = 0
-    patchs = []
-    patchs_be_removed = []
     
 
     fifo_gate = []
@@ -36,8 +35,6 @@ def decimating_conquest(vertices, faces):
             print(f"    V Patch to decim found (front_vertex valence = {valence}, len(front_vertex.attached_faces) = {len(front_vertex.attached_faces)})")
             # The corresponding patch will be decimated and retriangulated
             patch = Patch(patch_id, entry_gate, False, faces)
-            patchs.append(patch)
-            patchs_be_removed.append(patch)
 
             # The front vertex is flagged ToBeRemoved
             front_vertex.flag = Flag.ToBeRemoved
@@ -112,6 +109,9 @@ def decimating_conquest(vertices, faces):
             
             # And the v-1 output gates are generated and pushed to the fifo queue
             output_gates = patch.getOutputGates()
+
+            removedVertex(patch, vertices, faces)
+
             fifo_gate += output_gates
             fifo_gate.pop(0)
 
@@ -131,7 +131,6 @@ def decimating_conquest(vertices, faces):
 
             # And the two other output gates of the triangle are pushed onto the fifo queue
             patch = Patch(patch_id, entry_gate, True)
-            patchs.append(patch)
             output_gates = patch.getOutputGates()
             fifo_gate += output_gates
 
@@ -144,7 +143,7 @@ def decimating_conquest(vertices, faces):
 
     print("________ Fin Decimation ________")
     print("")
-    return patchs_be_removed, output, first_gate, frenet_coordinates
+    return output, first_gate, frenet_coordinates
 
     
 
