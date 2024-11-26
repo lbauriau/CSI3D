@@ -1,6 +1,7 @@
 import random
 from enum import Enum
 import numpy as np
+import obja
 
 class Flag(Enum):
     Free = 1
@@ -260,7 +261,6 @@ class Patch:
             V13 = p3 - p1
             Ni = np.cross(V12,V13)
             N = N + Ni
-        N = N/n
         norm_N = np.linalg.norm(N)
         N = N/norm_N
         return N
@@ -324,8 +324,8 @@ def getFirstTangent(patch,N):
     p1 = np.array([v1.x,v1.y,v1.z])
     p2 = np.array([v2.x,v2.y,v2.z])
     gate = p2-p1
-    norm_gate = np.linalg.norm(gate)
-    t1 = np.cross(N,gate/norm_gate)
+    t1 = gate - np.dot(gate, N) * N 
+    t1 = t1 / np.linalg.norm(t1)
     return t1
 
 def getSecondTangent(N,t1):
@@ -536,3 +536,38 @@ def canBeDecimated(entry_gate, faces):
                 raise Exception(f"    Error : valence: {valence}")
                 return False
     return is_valid
+
+def createOutputModel(operations, outputFile, isObj = False):
+    """
+    Écrit dans le fichier de sortie les instructions obja
+
+    :param [in] operations: liste des operations effectuées durant la compression/decompression.
+    :param [in/out] outputFile: Fichier dans lequel sont écritent les instructions obja
+    :param [in] isObj: booléen permettant de créer un fichier .obj afin de l'afficher dans Blender
+    """
+
+    #  Write the result in output file
+    output_model = obja.Output(outputFile, random_color= False)
+    for (ty, index, value) in operations:
+        match isObj, ty:
+            case _, "vertex":
+                output_model.add_vertex(index, value)
+            case _,"face":
+                output_model.add_face(index, value)
+            case False, "delete_face":
+                output_model.delete_face(index)
+
+    return output_model
+
+def addMeshToOperations(operations, vertices, faces):
+    # Iterate through the vertex
+    for (_, vertex) in enumerate(vertices):
+        #print(f"Adding vertex {vertex.id} to obja: {vertex.x} {vertex.y} {vertex.z}")
+        operations.append(('vertex', vertex.id, np.array([vertex.x,vertex.y,vertex.z], np.double)))
+
+    # Iterate through the faces
+    for (_, face) in enumerate(faces):
+        #print(f"Adding face {face.id} to obja: vertices {[v.id for v in face.vertices]}")
+        operations.append(('face', face.id, obja.Face(face.vertices[0].id,
+                                                      face.vertices[1].id,
+                                                      face.vertices[2].id,True)))
