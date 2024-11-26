@@ -110,7 +110,7 @@ def supprimerFace(face, faces, operations):
     faces.remove(face)
 
     print(f"Deleting face {face.id} to obja: vertices {[v.id for v in face.vertices]}")
-    operations.append(('delete_face', face.id))
+    operations.append(('delete_face', face.id, 0))
 
 
 def ajouterGatesCleaning(output_gates, patch, fifo):
