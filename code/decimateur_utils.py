@@ -260,7 +260,6 @@ class Patch:
             V13 = p3 - p1
             Ni = np.cross(V12,V13)
             N = N + Ni
-        N = N/n
         norm_N = np.linalg.norm(N)
         N = N/norm_N
         return N
@@ -324,8 +323,8 @@ def getFirstTangent(patch,N):
     p1 = np.array([v1.x,v1.y,v1.z])
     p2 = np.array([v2.x,v2.y,v2.z])
     gate = p2-p1
-    norm_gate = np.linalg.norm(gate)
-    t1 = np.cross(N,gate/norm_gate)
+    t1 = gate - np.dot(gate, N) * N 
+    t1 = t1 / np.linalg.norm(t1)
     return t1
 
 def getSecondTangent(N,t1):
