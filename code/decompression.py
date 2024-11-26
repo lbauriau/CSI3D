@@ -45,9 +45,11 @@ class Decompressor(obja.Model):
         ##############################
         # Boucle de compression
         ##############################
+
         i = 0
 
         while i < 10:
+            operations_compression = []
             print("")
             print("_________________________________________________________________________________________________")
             print(f"Iteration {i+1}")
@@ -81,59 +83,34 @@ class Decompressor(obja.Model):
             first_gates = [first_gate_clean] + first_gates
             removed_vertex_indices = c_removed_vertex_indices + removed_vertex_indices
 
+            # création de la mesh
+            addMeshToOperations(operations_compression, self.vertices, self.faces)
+
             with open(f'../TestModels/OutputIntermediaire{i+1}.obj', 'w') as outputIntm:
-                createOutputModel(self.faces, self.vertices, outputIntm), f'../TestModels/CompressionIntermediaire{i+1}.obj'
+                createOutputModel(operations_compression, outputIntm), f'../TestModels/CompressionIntermediaire{i+1}.obj'
 
             i += 1
 
         ##############################
         # Boucle de decompression
         ##############################
+        operations_decompression = []
+        # Initialisation des operation en créant tous les vertex et faces de la mesh compressée
+        addMeshToOperations(operations_decompression, self.vertices, self.faces)
+
         print("")
         print("_________________ Decoding _________________")
         print("")
 
         print(f"valences: {list_valence}")
 
-        discovery(list_valence,first_gates,liste_frenet, removed_vertex_indices,self.vertices, self.faces)
+        discovery(list_valence,first_gates,liste_frenet, removed_vertex_indices,self.vertices, self.faces,operations_decompression)
 
         with open(f'../TestModels/Decompress.obj', 'w') as outputIntm:
-                createOutputModel(self.faces, self.vertices, outputIntm), f'../TestModels/Decompress.obj'
+                createOutputModel(operations_decompression, outputIntm, True), f'../TestModels/Decompress.obj'
 
-        return createOutputModel(self.faces, self.vertices, outputFile)
+        return createOutputModel(operations_decompression, outputFile)
 
-def createOutputModel(faces, vertices, outputFile):
-    """
-    Écrit dans le fichier de sortie les instructions obja
-
-    :param [in] faces: ensemble des faces de la mesh.
-    :param [in] vertices: ensemble des vertices de la mesh.
-    :param [in/out] outputFile: Fichier dans lequel sont écritent les instructions obja
-    """
-    operations = []
-
-    # Iterate through the vertex
-    for (_, vertex) in enumerate(vertices):
-        #print(f"Adding vertex {vertex.id} to obja: {vertex.x} {vertex.y} {vertex.z}")
-        operations.append(('vertex', vertex.id, np.array([vertex.x,vertex.y,vertex.z], np.double)))
-
-    # Iterate through the faces
-    for (_, face) in enumerate(faces):
-        #print(f"Adding face {face.id} to obja: vertices {[v.id for v in face.vertices]}")
-        operations.append(('face', face.id, obja.Face(face.vertices[0].id,
-                                                            face.vertices[1].id,
-                                                            face.vertices[2].id,True)))
-    #  Write the result in output file
-    output_model = obja.Output(outputFile, random_color= False)
-    for (ty, index, value) in operations:
-        if ty == "vertex":
-            output_model.add_vertex(index, value)
-        elif ty == "face":
-            output_model.add_face(index, value)
-        else:
-            output_model.edit_vertex(index, value)
-
-    return output_model
 
 def main(args=None):
     if args is None:
@@ -151,7 +128,7 @@ def main(args=None):
 
     base = os.path.splitext(FILE_PATH)[0]
     print(base)
-    with open(f'{base}2.obj', 'w') as output:
+    with open(f'{base}2.obja', 'w') as output:
        model.decompress(output)
 
 
