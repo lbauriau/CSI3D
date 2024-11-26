@@ -24,8 +24,8 @@ class Compressor(obja.Model):
 
         i = 0
 
-        with open(f'../TestModels/OutputIntermediaireOrigin.obj', 'w') as outputIntm:
-                createOutputModel(self.faces, self.vertices, outputIntm), f'../TestModels/OutputIntermediaireOrigin.obj'
+        # with open(f'../TestModels/OutputIntermediaireOrigin.obj', 'w') as outputIntm:
+        #         createOutputModel(self.faces, self.vertices, outputIntm), f'../TestModels/OutputIntermediaireOrigin.obj'
 
         while i < 10:
             operations = []

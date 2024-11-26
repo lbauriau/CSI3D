@@ -268,7 +268,7 @@ def patchDiscovery(list_valence, first_gate, list_coord_frenet, removed_vertex_i
     # Variable répondant à la question : faut-il passer à la valence suivante ?
 
     while fifo_gate != []:
-        print(f"valences: {list_valence}")
+        # print(f"valences: {list_valence}")
         # On récupère la porte d'entrée
         entry_gate = fifo_gate.pop(0)
 
