@@ -261,6 +261,8 @@ class Patch:
             Ni = np.cross(V12,V13)
             N = N + Ni
         N = N/n
+        norm_N = np.linalg.norm(N)
+        N = N/norm_N
         return N
 
     def getBaricentre(self):
@@ -322,7 +324,8 @@ def getFirstTangent(patch,N):
     p1 = np.array([v1.x,v1.y,v1.z])
     p2 = np.array([v2.x,v2.y,v2.z])
     gate = p2-p1
-    t1 = np.cross(N,gate)
+    norm_gate = np.linalg.norm(gate)
+    t1 = np.cross(N,gate/norm_gate)
     return t1
 
 def getSecondTangent(N,t1):
