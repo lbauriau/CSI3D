@@ -106,8 +106,10 @@ class Decompressor(obja.Model):
 
         discovery(list_valence,first_gates,liste_frenet, removed_vertex_indices,self.vertices, self.faces,operations_decompression)
 
+        operations_decompression_ob = []
+        addMeshToOperations(operations_decompression_ob, self.vertices, self.faces)
         with open(f'../TestModels/Decompress.obj', 'w') as outputIntm:
-                createOutputModel(operations_decompression, outputIntm, True), f'../TestModels/Decompress.obj'
+                createOutputModel(operations_decompression_ob, outputIntm, True), f'../TestModels/Decompress.obj'
 
         return createOutputModel(operations_decompression, outputFile, random_color=True)
 

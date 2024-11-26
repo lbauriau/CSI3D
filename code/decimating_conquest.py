@@ -31,13 +31,14 @@ def decimating_conquest(vertices, faces):
         front_vertex = entry_gate.getFrontVertex()
         valence = front_vertex.getValence()
 
-        if (front_face.flag == Flag.Conquered) or (front_face.flag == Flag.ToBeRemoved):
+        if (front_face.flag == Flag.Conquered) or (front_face.flag == Flag.ToBeRemoved) or (front_face not in faces):
             print(f"    x Patch already computed flag:({front_face.flag})")
             # Nothing to do, patch we enter has already been or cannot be conquered
             # We discard the current gate
             fifo_gate.pop(0)
         elif (front_vertex.flag == Flag.Free) and (valence <= 6) and not front_vertex.isOnTheBoundary():
-            if canBeDecimated(entry_gate, faces):
+            breaking_manifold = False
+            if canBeDecimated(entry_gate, faces, breaking_manifold):
                 print(f"    V Patch to decim found (front_vertex valence = {valence}, len(front_vertex.attached_faces) = {len(front_vertex.attached_faces)})")
                 # The corresponding patch will be decimated and retriangulated
                 patch = Patch(patch_id, entry_gate, False)
@@ -87,6 +88,11 @@ def decimating_conquest(vertices, faces):
 
                 print(f"    bounding verts {[v.id for v in patch.bounding_vertices]}, bounding verts tags {[v.tag for v in patch.bounding_vertices]}")
             else:
+                if breaking_manifold:
+                    print(f"breaking manifold")
+                    output.append(-1)
+                    first_gate_idx = [first_gate.vertices[0].id, first_gate.vertices[1].id, first_gate_third_index]
+                    return output, first_gate_idx, frenet_coordinates, removed_vertex_indices
                 print(f"    Valid patch could not be decimated without violating manifold properties")
                 patch = treatNullPatch(fifo_gate, entry_gate, front_face, front_vertex, output)
                 if i == 0:
@@ -96,7 +102,8 @@ def decimating_conquest(vertices, faces):
             patch = treatNullPatch(fifo_gate, entry_gate, front_face, front_vertex, output)
             if i == 0:
                 first_gate_third_index = patch.bounding_vertices[2].id
-
+        else:
+            raise Exception("decimating")
         if len(fifo_gate) > 0:
             print("")
         i += 1

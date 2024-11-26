@@ -167,11 +167,11 @@ def removedVertex(patch_to_remove,vertices, faces):
         face = attached_faces_to_remove.pop(0)
         if face in faces:
             faces.remove(face)
-            print(f"        removed face {face.id} from main list")
+            print(f"        removed face {face.id} {[v.id for v in face.vertices]} from main list")
         for vertex in face.vertices: 
             if face in vertex.attached_faces:
                 vertex.attached_faces.remove(face)
-                print(f"        removed face {face.id} from vertex {vertex.id} attached faces")
+                # print(f"        removed face {face.id} from vertex {vertex.id} attached faces")
     
     # On enlève le vertex de la liste des vertex
     print(f"    removed vertex {vertex_to_remove.id}")

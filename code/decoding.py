@@ -16,26 +16,30 @@ def discovery(list_valence, list_gate, list_coord_frenet, removed_vertex_indices
     :param [in/out] operation:  modèle renvoyant un fichier .obja
     """
     i = 1
-    while (list_gate!=[]):
+    while (list_gate!=[]) and i < 7:
         print(f"______________ Debut decoding Cleaning {i} _______________")
 
         # On reverse le cleaning
         gate_cleaning = list_gate.pop(0)
         patchDiscovery3(list_valence, gate_cleaning, list_coord_frenet, removed_vertex_indices, vertices, faces, operation)
-        resetFlagTagParam(vertices, faces)
+        resetFlagTagParam(faces, vertices)
         
         print("")
         print("______________ Fin C Debut decoding D _______________")
 
+        # printVertsAndFaces(vertices,faces)
+
         # On reverse le decimateur
         gate_decim = list_gate.pop(0)
         patchDiscovery(list_valence, gate_decim, list_coord_frenet, removed_vertex_indices, vertices, faces, operation)
-        resetFlagTagParam(vertices, faces)
+        resetFlagTagParam(faces, vertices)
 
         print("")
         print(f"______________ Fin decoding Decimation {i} _______________")
         print("")
         i += 1
+        # printVertsAndFaces(vertices,faces)
+
 
 def creationVertex(frenet, patch, idx, vertices, operations):
     """
@@ -44,9 +48,15 @@ def creationVertex(frenet, patch, idx, vertices, operations):
     :param [in] frenet: coordonées de frenet
     :param [in] patch: patch sur lequel s'appuie les coordonées de frenet
     """
-    [n,t1,t2,b] = patch.getFrenet()
+    [b,t1,t2,n] = patch.getFrenet()
+    print(n)
+    print(t1)
+    print(t2)
+    print(b)
+    #raise Exception(frenet)
+
     vr_aux = b + frenet[0]*t1 + frenet[1]*t2 + frenet[2]*n
-    vr = Vertex(idx, [], Flag.Conquered, Tag.Plus, vr_aux[0], vr_aux[1], vr_aux[2])
+    vr = Vertex(idx, [], Flag.Conquered, None, vr_aux[0], vr_aux[1], vr_aux[2])
     patch.center_vertex = vr
     vertices.append(vr)
     #print(f"Added vertex {vr.id} at {vr_aux}")
@@ -103,14 +113,16 @@ def supprimerFace(face, faces, operations):
     :param [in/out] faces: ensemble des faces de la mesh
     """
     for vertex in face.vertices:
-        print(f"Suppression de la face {[v.id for v in face.vertices]} dans les attached_faces de {vertex.id}")
+        # print(f"Suppression de la face {[v.id for v in face.vertices]} dans les attached_faces de {vertex.id}")
         # for f in vertex.attached_faces:
         #     print(f"attached face: {[v.id for v in f.vertices]}")
-        vertex.attached_faces.remove(face)
-    faces.remove(face)
-
-    print(f"Deleting face {face.id} to obja: vertices {[v.id for v in face.vertices]}")
-    operations.append(('delete_face', face.id, 0))
+        if face in vertex.attached_faces:
+            vertex.attached_faces.remove(face)
+    if face in faces:
+        faces.remove(face)
+        print(f"Deleting face {face.id} to obja: vertices {[v.id for v in face.vertices]}")
+        operations.append(('delete_face', face.id, 0))
+    print(f"Wanted to deleting face {[v.id for v in face.vertices]}. Face is in faces = {face in faces}")
 
 
 def ajouterGatesCleaning(output_gates, patch, fifo):
@@ -132,6 +144,8 @@ def ajouterGatesCleaning(output_gates, patch, fifo):
             print(f"    ________________ Conquered face: {gate.front_face.id}")
         for gate in output_gates:
             gates = Patch(0,gate, True).getOutputGates()
+            for g in gates:
+                    g.getFrontVertex().flag = Flag.Conquered
             for o in gates:
                 print(f"    Good patch => ajout de la gate à la fifo: {[v.id for v in o.vertices]}, front ver = {o.getFrontVertex().id}")
             fifo += gates
@@ -197,9 +211,13 @@ def patchDiscovery3(list_valence,first_gate,list_coord_frenet, removed_vertex_in
         #             print(f"    attached face: {[v.id for v in f.vertices]}")
         #         print(f"")
 
-        if front_face.flag == Flag.Free: # Juste une vérif mais normalement que des free
+        if front_face.flag == Flag.Free and (front_face in faces): # Juste une vérif mais normalement que des free
             # On récupère la valence et les coordonnées du point à ajouter
             valence = list_valence.pop(0)
+
+            if valence == -1:
+                raise Exception("manifold broken")
+                return
 
             is_null_patch = valence == 0
 
@@ -268,7 +286,7 @@ def patchDiscovery(list_valence, first_gate, list_coord_frenet, removed_vertex_i
     # Variable répondant à la question : faut-il passer à la valence suivante ?
 
     while fifo_gate != []:
-        # print(f"valences: {list_valence}")
+        print(f"valences: {list_valence}")
         # On récupère la porte d'entrée
         entry_gate = fifo_gate.pop(0)
 
@@ -280,9 +298,13 @@ def patchDiscovery(list_valence, first_gate, list_coord_frenet, removed_vertex_i
         front_face = entry_gate.front_face
         front_vertex = entry_gate.getFrontVertex()
 
-        if front_face.flag == Flag.Free:
+        if front_face.flag == Flag.Free and (front_face in faces):
 
             valence = list_valence.pop(0)
+
+            if valence == -1:
+                raise Exception("manifold broken")
+                return
 
             print(f"valence liste: {valence}")
         
@@ -293,6 +315,7 @@ def patchDiscovery(list_valence, first_gate, list_coord_frenet, removed_vertex_i
                 case 0:
                     patch_add = Patch(0, entry_gate,True)
                     print(f"null patch entry gate: {[v.id for v in entry_gate.vertices]}, front ver = {entry_gate.getFrontVertex().id}")
+                    print(f"{[v.id for v in patch_add.bounding_vertices]}, tags: {[v.tag for v in patch_add.bounding_vertices]}")
                 case 3:
                     # Récupération des bounding vertices
                     bounding_vertices.append(entry_gate.getFrontVertex())
@@ -431,8 +454,10 @@ def patchDiscovery(list_valence, first_gate, list_coord_frenet, removed_vertex_i
                     # Création du patch
                     patch_add = Patch(0, entry_gate,False,bounding_vertices)
 
+            patch_add.setTags()
+
             print(f"Patch bounding discovery results:")
-            print(f"    bounding: {[v.id for v in patch_add.bounding_vertices]}")
+            print(f"    bounding: {[v.id for v in patch_add.bounding_vertices]}, tags: {[v.tag for v in patch_add.bounding_vertices]}")
             print(f"    center vertex: {patch_add.center_vertex.id}")
             print(f"    valence liste: {valence}, (patch valence: {patch_add.getValence()})")
             print(f"    is null patch: {patch_add.is_null_patch}")

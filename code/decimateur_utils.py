@@ -271,7 +271,7 @@ class Patch:
         """
         n = len(self.bounding_vertices)
         b = np.array([0,0,0])
-        for i in range (0,n-1):
+        for i in range (0,n):
             vert = self.bounding_vertices[i]
             b = b + np.array([vert.x,vert.y,vert.z])
         b = b/n
@@ -460,10 +460,12 @@ def checkAlreadyEdged(v1,v2,faces):
     #     raise Exception(f"    v1:{v1.id} v2:{v2.id} contained faces: {s}")
     return len(contained_in_faces) > 0
 
-def canBeDecimated(entry_gate, faces):
+def canBeDecimated(entry_gate, faces, breaking_manifold):
     """
     checks the manifold condition for the decimation of a patch
     """
+    breaking_manifold = False
+
     front_face = entry_gate.front_face
     front_vertex = entry_gate.getFrontVertex()
     valence = front_vertex.getValence()
@@ -471,7 +473,12 @@ def canBeDecimated(entry_gate, faces):
     is_valid = True
 
     if not front_vertex.isOnTheBoundary():
-        patch = Patch(0,entry_gate, False)
+        try:
+            patch = Patch(0,entry_gate, False)
+        except:
+            print(f"    Error: Patch creation failed")
+            breaking_manifold = True
+            return False
 
         patch_bounding_vertices = patch.bounding_vertices[:]
 
