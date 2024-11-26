@@ -200,8 +200,8 @@ class Patch:
         gate_vertices = self.entry_gate.vertices
         for nv in self.bounding_vertices:
             if nv not in gate_vertices:
-                if (nv.tag == None):
-                    match self.getValence:
+                if (nv.tag is None):
+                    match self.getValence():
                         case 3:
                             if ((gate_vertices[0].tag == Tag.Plus) and (gate_vertices[1].tag == Tag.Plus)):
                                 nv.tag = Tag.Minus
@@ -448,17 +448,34 @@ def resetFlagTagParam(faces, vertices):
             vertex.flag = Flag.Free
             vertex.tag = None
 
+def checkAlreadyEdged(v1,v2,faces):
+    """
+    Vérifie si deux vertices sont déjà liés par une face
+    """
+    contained_in_faces = [f for f in faces if v1 in f.vertices and v2 in f.vertices]
+    # s=""
+    # for f in contained_in_faces:
+    #     s += f"{[v.id for v in f.vertices]}\n"
+    # if len(contained_in_faces) > 0:
+    #     raise Exception(f"    v1:{v1.id} v2:{v2.id} contained faces: {s}")
+    return len(contained_in_faces) > 0
+
 def canBeDecimated(entry_gate, faces):
+    """
+    checks the manifold condition for the decimation of a patch
+    """
     front_face = entry_gate.front_face
     front_vertex = entry_gate.getFrontVertex()
     valence = front_vertex.getValence()
 
+    is_valid = True
+
     if not front_vertex.isOnTheBoundary():
         patch = Patch(0,entry_gate, False)
 
-        patch_bounding_vertices = patch.bounding_vertices
+        patch_bounding_vertices = patch.bounding_vertices[:]
 
-        [vertex1,vertex2] = entry_gate.vertices
+        [vertex1,vertex2] = entry_gate.vertices[:]
 
         match valence :
             case 3 :
@@ -466,68 +483,37 @@ def canBeDecimated(entry_gate, faces):
 
                 matching_faces = [f for f in faces if isSameFace(f, new_face)]
 
-                return len(matching_faces) == 0
+                is_valid = len(matching_faces) == 0
             case 4 :
                 vertex4 = patch_bounding_vertices.pop()
                 vertex3 = patch_bounding_vertices.pop()
                 match vertex2.tag:
                     case Tag.Minus:
-                        new_face1 = Face(0, Flag.Conquered,[vertex1,vertex2,vertex3])
-                        new_face2 = Face(0, Flag.Conquered,[vertex1,vertex3,vertex4])
+                        is_valid = not checkAlreadyEdged(vertex1, vertex3,faces)
 
-                        matching_faces = [f for f in faces if isSameFace(f, new_face1) or isSameFace(f, new_face2)]
-
-                        return len(matching_faces) == 0
-
-                    case Tag.Plus:          
-                        new_face1 = Face(0, Flag.Conquered,[vertex1,vertex2,vertex4])
-                        new_face2 = Face(0, Flag.Conquered,[vertex2,vertex3,vertex4])
-
-                        matching_faces = [f for f in faces if isSameFace(f, new_face1) or isSameFace(f, new_face2)]
-
-                        return len(matching_faces) == 0
+                    case Tag.Plus:
+                        is_valid = not checkAlreadyEdged(vertex2, vertex4,faces)
                     case _ :
-                        print(f"    Error : Tag incorecte tag vert2 {vertex2.tag} ---------------------------------")
+                        raise Exception(f"    Error : Tag incorecte tag vert2 {vertex2.tag} ---------------------------------")
             case 5 :
                 vertex5 = patch_bounding_vertices.pop()
                 vertex4 = patch_bounding_vertices.pop()
                 vertex3 = patch_bounding_vertices.pop()
                 match vertex1.tag, vertex2.tag:
                     case _,Tag.Minus:
-                        new_face1 = Face(0, Flag.Conquered,[vertex1,vertex2,vertex3])
-                        new_face2 = Face(0, Flag.Conquered,[vertex1,vertex3,vertex5])
-                        new_face3 = Face(0, Flag.Conquered,[vertex3,vertex4,vertex5])
-                        
-                        matching_faces = [f for f in faces if isSameFace(f, new_face1)
-                                          or isSameFace(f, new_face2)
-                                          or isSameFace(f, new_face3)]
-
-                        return len(matching_faces) == 0
+                        is_valid = not checkAlreadyEdged(vertex1, vertex3,faces)
+                        is_valid &= not checkAlreadyEdged(vertex3, vertex5,faces)
 
                     case Tag.Minus,Tag.Plus:
-                        new_face1 = Face(0, Flag.Conquered,[vertex1,vertex2,vertex5])
-                        new_face2 = Face(0, Flag.Conquered,[vertex2,vertex3,vertex5])
-                        new_face3 = Face(0, Flag.Conquered,[vertex3,vertex4,vertex5])
-                        
-                        matching_faces = [f for f in faces if isSameFace(f, new_face1)
-                                          or isSameFace(f, new_face2)
-                                          or isSameFace(f, new_face3)]
-
-                        return len(matching_faces) == 0
+                        is_valid = not checkAlreadyEdged(vertex2, vertex5,faces)
+                        is_valid &= not checkAlreadyEdged(vertex3, vertex5,faces)
 
                     case Tag.Plus,Tag.Plus:
-                        new_face1 = Face(0, Flag.Conquered,[vertex1,vertex2,vertex4])
-                        new_face2 = Face(0, Flag.Conquered,[vertex2,vertex3,vertex4])
-                        new_face3 = Face(0, Flag.Conquered,[vertex1,vertex4,vertex5])
-                        
-                        matching_faces = [f for f in faces if isSameFace(f, new_face1)
-                                          or isSameFace(f, new_face2)
-                                          or isSameFace(f, new_face3)]
-
-                        return len(matching_faces) == 0
+                        is_valid = not checkAlreadyEdged(vertex1, vertex4,faces)
+                        is_valid &= not checkAlreadyEdged(vertex2, vertex4,faces)
 
                     case _ :
-                        print(f"    Error : Tag incorecte tag vert1 {vertex1.tag} vert2 {vertex2.tag} ---------------------------------")
+                        raise Exception(f"    Error : Tag incorecte tag vert1 {vertex1.tag} vert2 {vertex2.tag} ---------------------------------")
             case 6 :
                 vertex6 = patch_bounding_vertices.pop()
                 vertex5 = patch_bounding_vertices.pop()
@@ -535,36 +521,21 @@ def canBeDecimated(entry_gate, faces):
                 vertex3 = patch_bounding_vertices.pop()
                 match vertex2.tag:
                     case Tag.Minus:
-                        new_face1 = Face(0, Flag.Conquered,[vertex1,vertex2,vertex3])
-                        new_face2 = Face(0, Flag.Conquered,[vertex3,vertex4,vertex5])
-                        new_face3 = Face(0, Flag.Conquered,[vertex1,vertex5,vertex6])
-                        new_face4 = Face(0, Flag.Conquered,[vertex1,vertex3,vertex5])
-
-                        matching_faces = [f for f in faces if isSameFace(f, new_face1)
-                                          or isSameFace(f, new_face2)
-                                          or isSameFace(f, new_face3)
-                                          or isSameFace(f, new_face4)]
-
-                        return len(matching_faces) == 0
+                        is_valid = not checkAlreadyEdged(vertex1, vertex3,faces)
+                        is_valid &= not checkAlreadyEdged(vertex3, vertex5,faces)
+                        is_valid &= not checkAlreadyEdged(vertex5, vertex1,faces)
 
                     case Tag.Plus:
-                        new_face1 = Face(0, Flag.Conquered,[vertex1,vertex2,vertex6])
-                        new_face2 = Face(0, Flag.Conquered,[vertex2,vertex3,vertex4])
-                        new_face3 = Face(0, Flag.Conquered,[vertex4,vertex5,vertex6])
-                        new_face4 = Face(0, Flag.Conquered,[vertex2,vertex4,vertex6])
-
-                        matching_faces = [f for f in faces if isSameFace(f, new_face1)
-                                          or isSameFace(f, new_face2)
-                                          or isSameFace(f, new_face3)
-                                          or isSameFace(f, new_face4)]
-
-                        return len(matching_faces) == 0
+                        is_valid = not checkAlreadyEdged(vertex2, vertex4,faces)
+                        is_valid &= not checkAlreadyEdged(vertex4, vertex6,faces)
+                        is_valid &= not checkAlreadyEdged(vertex2, vertex6,faces)
 
                     case _ :
-                        print(f"    Error : Tag incorecte tag vert2 {vertex2.tag} ---------------------------------")
+                        raise Exception(f"    Error : Tag incorecte tag vert2 {vertex2.tag} ---------------------------------")
             case _ :
-                print(f"    Error : valence: {valence}")
+                raise Exception(f"    Error : valence: {valence}")
                 return False
+    return is_valid
 
 def createOutputModel(operations, outputFile, isObj = False):
     """
