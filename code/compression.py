@@ -24,6 +24,9 @@ class Compressor(obja.Model):
 
         i = 0
 
+        with open(f'../TestModels/OutputIntermediaireOrigin.obj', 'w') as outputIntm:
+                createOutputModel(self.faces, self.vertices, outputIntm), f'../TestModels/OutputIntermediaireOrigin.obj'
+
         while i < 10:
             print("")
             print("_________________________________________________________________________________________________")
@@ -33,7 +36,7 @@ class Compressor(obja.Model):
 
             print(f"Decimation {i+1} results:")
             #print(f"    - Vertex 2br {[p.center_vertex.id for p in patch_to_be_removed]}")
-            print(f"    - Firstgates: {[v.id for v in first_gate_decim.vertices]}")
+            #print(f"    - Firstgates: {[v.id for v in first_gate_decim.vertices]}")
             # print(f"    - faces: {[f.id for f in self.faces]}")
             print("")
 

@@ -22,7 +22,7 @@ def removedVertex(patch_to_remove,vertices, faces):
     
     # On récupère le vertex à enlever ainsi que ces faces attachées
     vertex_to_remove = patch_to_remove.center_vertex
-    attached_faces_to_remove = vertex_to_remove.attached_faces
+    attached_faces_to_remove = vertex_to_remove.attached_faces[:]
 
     print(f"    faces to remove {[f.id for f in attached_faces_to_remove]}")
 
@@ -32,7 +32,7 @@ def removedVertex(patch_to_remove,vertices, faces):
     
     # On récupère la face d'entrée pour faire correctement le flag
     entryGate = patch_to_remove.entry_gate
-    [vertex1,vertex2] = entryGate.vertices
+    [vertex1,vertex2] = entryGate.vertices[:]
     flag1 = vertex1.flag
     flag2 = vertex2.flag
 

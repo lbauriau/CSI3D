@@ -18,7 +18,7 @@ def cleaningConquest(vertices, faces):
     i = 0
     #Tant qu'il y en a, on traite les gates de la fifo
     while len(fifo) > 0:
-        print(f"valence {bn}")
+        # print(f"valence {bn}")
         current_gate = fifo[0]
         front_face = current_gate.front_face
         front_vertex = current_gate.getFrontVertex()
