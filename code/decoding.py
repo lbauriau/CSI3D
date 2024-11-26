@@ -57,9 +57,9 @@ def creationFaces(patch, faces, operations):
     """
     créer les différentes faces liant le center_vertex aux autres vertices du patch.
 
-    :param [in] list_vertices: liste des bounding vertices d'un patch
-    :param [in] center_vertex:  vertex central du patch
-    :param [in/out] faces: ensemble des faces de la mesh
+    :param [in] patch: patch que l'on traite.
+    :param [in/out] faces: ensemble des faces de la mesh.
+    :param [in/out] operations: listes des opérations de décompressions
     """
     valence = len(patch.bounding_vertices)
     for i in range (valence):
@@ -169,7 +169,7 @@ def patchDiscovery3(list_valence,first_gate,list_coord_frenet, removed_vertex_in
                 list_coord_frenet[i] est associée à list_valence[i]
     :param [in/out] vertices: ensemble des vertices présents dans la mesh
     :param [in/out] faces:  ensemble des faces présentes dans la mesh
-    :param [in/out] operation:  modèle renvoyant un fichier .obja
+    :param [in/out] operations:  modèle renvoyant un fichier .obja
     """
 
     fifo_gate = []
@@ -253,7 +253,7 @@ def patchDiscovery(list_valence, first_gate, list_coord_frenet, removed_vertex_i
                 list_coord_frenet[i] est associée à list_valence[i]
     :param [in/out] vertices: ensemble des vertices présents dans la mesh
     :param [in/out] faces:  ensemble des faces présentes dans la mesh
-    :param [in/out] operation:  modèle renvoyant un fichier .obja
+    :param [in/out] operations:  modèle renvoyant un fichier .obja
     """
 
     fifo_gate = []
@@ -445,13 +445,13 @@ def patchDiscovery(list_valence, first_gate, list_coord_frenet, removed_vertex_i
                 idx = removed_vertex_indices.pop(0)
 
                 # Récupération de la base
-                creationVertex(frenet, patch_add, idx, vertices)
+                creationVertex(frenet, patch_add, idx, vertices, operations)
 
                 # Création des nouvelles faces et ajout dans les vertices
-                creationFaces(patch_add, faces)
+                creationFaces(patch_add, faces,operations)
 
                 # Suppression de la face dans les vertices et dans faces
-                supprimerFacesMultiple(entry_faces, faces)
+                supprimerFacesMultiple(entry_faces, faces, operations)
             else:
                 entry_gate.front_face.flag = Flag.Conquered
 
