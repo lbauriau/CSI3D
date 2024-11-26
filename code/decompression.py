@@ -109,16 +109,18 @@ class Decompressor(obja.Model):
         with open(f'../TestModels/Decompress.obj', 'w') as outputIntm:
                 createOutputModel(operations_decompression, outputIntm, True), f'../TestModels/Decompress.obj'
 
-        return createOutputModel(operations_decompression, outputFile)
+        return createOutputModel(operations_decompression, outputFile, random_color=True)
 
 
 def main(args=None):
     if args is None:
         args = sys.argv[1:]
 
-    FILE_PATH = "../TestModels/IcoSphere.obj"
+    base = "IcoSphere"
     if len(args) > 0:
-        FILE_PATH = f"../TestModels/{args[-1]}.obj"
+        base = args[-1]
+
+    FILE_PATH = f"../TestModels/{base}.obj"
     """
     Runs the program on the model given as parameter.
     """
@@ -126,11 +128,9 @@ def main(args=None):
     model = Decompressor()
     model.parse_file(FILE_PATH)
 
-    base = os.path.splitext(FILE_PATH)[0]
-    print(base)
-    with open(f'{base}2.obja', 'w') as output:
+    with open(f'example/{base}.obja', 'w') as output:
        model.decompress(output)
-
+    print(base)
 
 if __name__ == '__main__':
     main()

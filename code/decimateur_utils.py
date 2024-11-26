@@ -566,7 +566,7 @@ def canBeDecimated(entry_gate, faces):
                 print(f"    Error : valence: {valence}")
                 return False
 
-def createOutputModel(operations, outputFile, isObj = False):
+def createOutputModel(operations, outputFile, isObj = False, random_color = False):
     """
     Écrit dans le fichier de sortie les instructions obja
 
@@ -576,7 +576,7 @@ def createOutputModel(operations, outputFile, isObj = False):
     """
 
     #  Write the result in output file
-    output_model = obja.Output(outputFile, random_color= False)
+    output_model = obja.Output(outputFile, random_color)
     for (ty, index, value) in operations:
         match isObj, ty:
             case _, "vertex":
