@@ -130,9 +130,10 @@ def main(args=None):
     model = Decompressor()
     model.parse_file(FILE_PATH)
 
-    with open(f'example/{base}.obja', 'w') as output:
-       model.decompress(output)
-    print(base)
+    with open('logs.txt', 'w') as sys.stdout:
+        with open(f'example/{base}.obja', 'w') as output:
+            model.decompress(output)
+        print(base)
 
 if __name__ == '__main__':
     main()

@@ -37,6 +37,12 @@ def cleaningConquest(vertices, faces):
                 #On crée une instance de l'objet patch à l'aide de la gate traitee
                 current_patch = Patch(0,current_gate, False)
                 print(f"    current patch center vertex:{current_patch.center_vertex.id} valence: {current_patch.getValence()}")
+                print(f"    Patch bounding vertex {[v.id for v in current_patch.bounding_vertices]}")
+                s = "    Patch face flags"
+                for f in current_patch.center_vertex.attached_faces:
+                    s += f" f{f.id} {[v.id for v in f.vertices]} {f.flag}"
+                print(s)
+                print(f"    Patch center vertex {current_patch.center_vertex.id} {current_patch.center_vertex.flag}")
                 print(f"    Patch is going to be simplified")
 
                 #On traite le patch
@@ -56,14 +62,15 @@ def cleaningConquest(vertices, faces):
                 #ajoute à la fifo les outputs gates correctes
                 for gate in output_gates:
                     gate.front_face.flag = Flag.Conquered
+                    gate.getFrontVertex().flag = Flag.Conquered
                     gates = Patch(0,gate, True).getOutputGates()
                     print(f"   ____________ Conquered face: {gate.front_face.id} {[v.id for v in gate.front_face.vertices]}")
 
                     for g in gates:
-                        print(f"   ____________ Side face: {g.front_face.id} {[v.id for v in g.front_face.vertices]}")
+                        print(f"   ____________ exit faces: {g.front_face.id} {[v.id for v in g.front_face.vertices]}")
                         g.getFrontVertex().flag = Flag.Conquered
+                        print(f"        -> outputgate added to fifo: {[v.id for v in  g.vertices]} {g.getFrontVertex().id}")
                     fifo += gates
-                    print(f"        -> outputgate added to fifo: {[g for g in gates]}")
 
                 #Suppression des éléments du patch
                 while front_vertex.attached_faces:
@@ -121,6 +128,8 @@ def computeNullPatch(fifo, front_face, current_gate,bn):
     front_face.flag = Flag.Conquered
     current_patch = Patch(0,current_gate, True)
     fifo += current_patch.getOutputGates()
+    for g in current_patch.getOutputGates():
+        print(f"        -> outputgate added to fifo: {[v.id for v in  g.vertices]} {g.getFrontVertex().id}")
     bn.append(0)
 
     return current_patch
