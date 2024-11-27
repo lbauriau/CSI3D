@@ -331,7 +331,15 @@ class Output:
         ),
             file=self.output
         )
-
+    def delete_face(self, index_face):
+        """
+        Changes the indices of the vertices of the specified face.
+        """
+        print('df {} '.format(
+            self.face_mapping[index_face] + 1,
+        ),
+            file=self.output
+        )
 
 def main():
     if len(sys.argv) == 1:

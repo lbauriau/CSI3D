@@ -29,16 +29,6 @@ class Decompressor(obja.Model):
         self.vertices = vertices
         self.faces = faces
 
-    def resetFlagTagParam(self):
-        """
-        Remet à zeros les Flag et Tag de l'ensemble des vertex et des faces.
-        """
-        for face in self.faces:
-            face.flag = Flag.Free
-        for vertex in self.vertices:
-            vertex.flag = Flag.Free
-            vertex.tag = None
-
     def decompress(self, outputFile):
         """
 
@@ -50,104 +40,89 @@ class Decompressor(obja.Model):
         list_valence = []
         liste_frenet = []
         first_gates = []
+        removed_vertex_indices = []
 
         ##############################
         # Boucle de compression
         ##############################
+
         i = 0
 
-        while i < 4:
+        while i < 10:
+            operations_compression = []
             print("")
             print("_________________________________________________________________________________________________")
             print(f"Iteration {i+1}")
             print("")
-            patch_to_be_removed, output_iter, first_gate_decim, f_coord_decim = decimating_conquest(self.vertices, self.faces)
+            output_iter, first_gate_decim, f_coord_decim, d_removed_vertex_indices = decimating_conquest(self.vertices, self.faces)
 
             print(f"Decimation {i+1} results:")
-            print(f"    - Vertex 2br {[p.center_vertex.id for p in patch_to_be_removed]}")
-            print(f"    - First_gates: {[v.id for v in first_gate_decim.vertices]}")
-            # print(f"    - faces: {[f.id for f in self.faces]}")
+            #print(f"    - Firstgates: {[v.id for v in first_gate_decim.vertices]}")
             print("")
 
-            retriangulation_conquest(self.vertices, self.faces, patch_to_be_removed)
-
             # remise à zéros des flag et tag des vertices et faces après la conquête de décimation
-            self.resetFlagTagParam()
+            resetFlagTagParam(self.faces, self.vertices)
 
             # Récupération des variables à transmettre au decoder pour le cleaning
             list_valence = output_iter + list_valence
             liste_frenet = f_coord_decim + liste_frenet
-            first_gates.append(first_gate_decim)
+            first_gates = [first_gate_decim] + first_gates
+            removed_vertex_indices = d_removed_vertex_indices + removed_vertex_indices
 
             print(f"Retriangulation {i+1} results:")
             # print(f"    - retri faces: {[f.id for f in self.faces]}")
 
-            #Bn, first_gate_clean, f_coord_clean = cleaningConquest(self.vertices, self.faces)
+            Bn, first_gate_clean, f_coord_clean, c_removed_vertex_indices = cleaningConquest(self.vertices, self.faces)
 
             # remise à zéros des flag et tag des vertices et faces après la conquête de cleaning
-            #self.resetFlagTagParam()
+            resetFlagTagParam(self.faces, self.vertices)
 
             # Récupération des variables à transmettre au decoder pour le cleaning
-            #list_valence = Bn + list_valence
-            #liste_frenet = f_coord_clean + liste_frenet
-            #first_gates.append(first_gate_clean)
+            list_valence = Bn + list_valence
+            liste_frenet = f_coord_clean + liste_frenet
+            first_gates = [first_gate_clean] + first_gates
+            removed_vertex_indices = c_removed_vertex_indices + removed_vertex_indices
+
+            # création de la mesh
+            addMeshToOperations(operations_compression, self.vertices, self.faces)
 
             with open(f'../TestModels/OutputIntermediaire{i+1}.obj', 'w') as outputIntm:
-                createOutputModel(self.faces, self.vertices, outputIntm), f'../TestModels/OutputIntermediaire{i+1}.obj'
+                createOutputModel(operations_compression, outputIntm), f'../TestModels/CompressionIntermediaire{i+1}.obj'
 
             i += 1
 
         ##############################
         # Boucle de decompression
         ##############################
+        operations_decompression = []
+        # Initialisation des operation en créant tous les vertex et faces de la mesh compressée
+        addMeshToOperations(operations_decompression, self.vertices, self.faces)
 
-        #discovery(list_valence,first_gates,liste_frenet,self.vertices, self.faces)
+        print("")
+        print("_________________ Decoding _________________")
+        print("")
 
-        #Test sans le cleaning
-        patchDiscovery(list_valence,first_gates,liste_frenet, self.vertices, self.faces)
+        print(f"valences: {list_valence}")
 
-        return createOutputModel(self.faces, self.vertices, outputFile)
+        discovery(list_valence,first_gates,liste_frenet, removed_vertex_indices,self.vertices, self.faces,operations_decompression)
 
-def createOutputModel(faces, vertices, outputFile):
-    """
-    Écrit dans le fichier de sortie les instructions obja
+        operations_decompression_ob = []
+        addMeshToOperations(operations_decompression_ob, self.vertices, self.faces)
+        with open(f'../TestModels/Decompress.obj', 'w') as outputIntm:
+                createOutputModel(operations_decompression_ob, outputIntm, True), f'../TestModels/Decompress.obj'
 
-    :param [in] faces: ensemble des faces de la mesh.
-    :param [in] vertices: ensemble des vertices de la mesh.
-    :param [in/out] outputFile: Fichier dans lequel sont écritent les instructions obja
-    """
-    operations = []
+        return createOutputModel(operations_decompression, outputFile, random_color=True)
 
-    # Iterate through the vertex
-    for (_, vertex) in enumerate(vertices):
-        #print(f"Adding vertex {vertex.id} to obja: {vertex.x} {vertex.y} {vertex.z}")
-        operations.append(('vertex', vertex.id, np.array([vertex.x,vertex.y,vertex.z], np.double)))
-
-    # Iterate through the faces
-    for (_, face) in enumerate(faces):
-        #print(f"Adding face {face.id} to obja: vertices {[v.id for v in face.vertices]}")
-        operations.append(('face', face.id, obja.Face(face.vertices[0].id,
-                                                            face.vertices[1].id,
-                                                            face.vertices[2].id,True)))
-    #  Write the result in output file
-    output_model = obja.Output(outputFile, random_color= False)
-    for (ty, index, value) in operations:
-        if ty == "vertex":
-            output_model.add_vertex(index, value)
-        elif ty == "face":
-            output_model.add_face(index, value)
-        else:
-            output_model.edit_vertex(index, value)
-
-    return output_model
 
 def main(args=None):
     if args is None:
         args = sys.argv[1:]
 
-    FILE_PATH = "../TestModels/IcoSphere.obj"
+    base = "IcoSphere"
     if len(args) > 0:
-        FILE_PATH = f"../TestModels/{args[-1]}.obj"
+        base = args[-1]
+
+    FILE_PATH = f"../TestModels/{base}.obj"
     """
     Runs the program on the model given as parameter.
     """
@@ -155,11 +130,9 @@ def main(args=None):
     model = Decompressor()
     model.parse_file(FILE_PATH)
 
-    base = os.path.splitext(FILE_PATH)[0]
-    print(base)
-    with open(f'{base}2.obj', 'w') as output:
+    with open(f'example/{base}.obja', 'w') as output:
        model.decompress(output)
-
+    print(base)
 
 if __name__ == '__main__':
     main()

@@ -2,7 +2,7 @@ from decimateur_utils import *
 
 # Fonction globale de retriangulation
 
-def discovery(list_valence, list_gate, list_coord_frenet,vertices,faces):
+def discovery(list_valence, list_gate, list_coord_frenet, removed_vertex_indices, vertices, faces, operation):
     """
     Fonction effectuant des passes de patch-discovery3 et patch-discovery afin de décompresser la mesh.
 
@@ -13,50 +13,88 @@ def discovery(list_valence, list_gate, list_coord_frenet,vertices,faces):
                 list_coord_frenet[i] est associée à list_valence[i]
     :param [in/out] vertices: ensemble des vertices présents dans la mesh
     :param [in/out] faces:  ensemble des faces présentes dans la mesh
+    :param [in/out] operation:  modèle renvoyant un fichier .obja
     """
+    i = 1
     while (list_gate!=[]):
-        # On reverse le cleaning
-        gate3 = list_gate.pop()
-        patchDiscovery3(list_valence,gate3,list_coord_frenet,vertices,faces)
-        
-        # On reverse le decimateur
-        gate_glob = list_gate.pop()
-        patchDiscovery(list_valence,gate_glob,list_coord_frenet, vertices, faces)
+        print(f"______________ Debut decoding Cleaning {i} _______________")
 
-def creationVertex(frenet, patch):
+        # On reverse le cleaning
+        gate_cleaning = list_gate.pop(0)
+        patchDiscovery3(list_valence, gate_cleaning, list_coord_frenet, removed_vertex_indices, vertices, faces, operation)
+        resetFlagTagParam(faces, vertices)
+        
+        print("")
+        print("______________ Fin C Debut decoding D _______________")
+
+        # printVertsAndFaces(vertices,faces)
+
+        # On reverse le decimateur
+        gate_decim = list_gate.pop(0)
+        patchDiscovery(list_valence, gate_decim, list_coord_frenet, removed_vertex_indices, vertices, faces, operation)
+        resetFlagTagParam(faces, vertices)
+
+        print("")
+        print(f"______________ Fin decoding Decimation {i} _______________")
+        print("")
+        i += 1
+        # printVertsAndFaces(vertices,faces)
+
+
+def creationVertex(frenet, patch, idx, vertices, operations):
     """
     Créer le vertex central d'un patch grâce à ses coordonnées de frenet.
 
     :param [in] frenet: coordonées de frenet
     :param [in] patch: patch sur lequel s'appuie les coordonées de frenet
-    :return: le vertex central d'un patch
     """
-    [n,t1,t2,b] = patch.getFrenet()
+    [b,t1,t2,n] = patch.getFrenet()
+    print(n)
+    print(t1)
+    print(t2)
+    print(b)
+    #raise Exception(frenet)
+
     vr_aux = b + frenet[0]*t1 + frenet[1]*t2 + frenet[2]*n
-    vr = Vertex( 0, [], Flag.Conquered, Tag.Plus, vr_aux[0], vr_aux[1], vr_aux[2])
+    vr = Vertex(idx, [], Flag.Conquered, None, vr_aux[0], vr_aux[1], vr_aux[2])
+    patch.center_vertex = vr
+    vertices.append(vr)
+    #print(f"Added vertex {vr.id} at {vr_aux}")
+    print(f"Adding vertex {vr.id} to obja: {vr.x} {vr.y} {vr.z}")
+    operations.append(('vertex', vr.id, np.array([vr.x,vr.y,vr.z], np.double)))
 
-    return vr
-
-def creationFaces(list_vertices, center_vertex, faces):
+def creationFaces(patch, faces, operations):
     """
     créer les différentes faces liant le center_vertex aux autres vertices du patch.
 
-    :param [in] list_vertices: liste des bounding vertices d'un patch
-    :param [in] center_vertex:  vertex central du patch
-    :param [in/out] faces: ensemble des faces de la mesh
+    :param [in] patch: patch que l'on traite.
+    :param [in/out] faces: ensemble des faces de la mesh.
+    :param [in/out] operations: listes des opérations de décompressions
     """
-    valence = len(list_vertices)
+    valence = len(patch.bounding_vertices)
     for i in range (valence):
-        idx = getNextElementIndex(faces)
-        new_face = Face(idx, Flag.Conquered, [list_vertices[i], list_vertices[(i+1)%valence],center_vertex])
+        new_face = Face(getNextElementIndex(faces),
+                        Flag.Conquered,
+                        [
+                            patch.bounding_vertices[i],
+                            patch.bounding_vertices[(i+1)%valence],
+                            patch.center_vertex
+                        ])
         faces.append(new_face)
 
-        # Ajout de la face dans les faces attachées aux vertex la composant
-        list_vertices[i].attached_faces.append(new_face)
-        list_vertices[(i+1)%valence].attached_faces.append(new_face)
-        center_vertex.attached_faces.append(new_face)
+        print(f"Adding face {new_face.id} to obja: vertices {[v.id for v in new_face.vertices]}")
+        operations.append(('face', new_face.id, obja.Face(new_face.vertices[0].id,
+                                                      new_face.vertices[1].id,
+                                                      new_face.vertices[2].id,True)))
 
-def supprimerFacesMultiple(list_face, faces):
+        # Ajout de la face dans les faces attachées aux vertex la composant
+        patch.bounding_vertices[i].attached_faces.append(new_face)
+        patch.bounding_vertices[(i+1)%valence].attached_faces.append(new_face)
+        patch.center_vertex.attached_faces.append(new_face)
+
+        #print(f"Added face {[v.id for v in new_face.vertices]}")
+
+def supprimerFacesMultiple(list_face, faces, operations):
     """
     Supprime les références aux faces de list_faces
 
@@ -65,9 +103,9 @@ def supprimerFacesMultiple(list_face, faces):
 
     """
     for face in list_face:
-        supprimerFace(face, faces)
+        supprimerFace(face, faces, operations)
 
-def supprimerFace(face, faces):
+def supprimerFace(face, faces, operations):
     """
     Supprime les références à la face en paramètre
 
@@ -75,8 +113,17 @@ def supprimerFace(face, faces):
     :param [in/out] faces: ensemble des faces de la mesh
     """
     for vertex in face.vertices:
-        vertex.attached_faces.remove(face)
-    faces.remove(face)
+        # print(f"Suppression de la face {[v.id for v in face.vertices]} dans les attached_faces de {vertex.id}")
+        # for f in vertex.attached_faces:
+        #     print(f"attached face: {[v.id for v in f.vertices]}")
+        if face in vertex.attached_faces:
+            vertex.attached_faces.remove(face)
+    if face in faces:
+        faces.remove(face)
+        print(f"Deleting face {face.id} to obja: vertices {[v.id for v in face.vertices]}")
+        operations.append(('delete_face', face.id, 0))
+    print(f"Wanted to deleting face {[v.id for v in face.vertices]}. Face is in faces = {face in faces}")
+
 
 def ajouterGatesCleaning(output_gates, patch, fifo):
     """
@@ -88,15 +135,44 @@ def ajouterGatesCleaning(output_gates, patch, fifo):
     :param [in/out] fifo: la pile fifo de gates
     """
     if patch.is_null_patch:
+        for o in output_gates:
+                print(f"    Null patch => ajout de la gate à la fifo: {[v.id for v in o.vertices]}, front ver = {o.getFrontVertex().id}")
         fifo += output_gates
     else:
         for gate in output_gates:
             gate.front_face.flag = Flag.Conquered
-        for gate in output_gates:
+            print(f"   ____________ Conquered face: {gate.front_face.id} {[v.id for v in gate.front_face.vertices]}")
             gates = Patch(0,gate, True).getOutputGates()
+            for g in gates:
+                g.getFrontVertex().flag = Flag.Conquered
+                print(f"    Good patch => ajout de la gate à la fifo: {[v.id for v in g.vertices]}, front ver = {g.getFrontVertex().id}")
             fifo += gates
 
-def patchDiscovery3(list_valence,first_gate,list_coord_frenet,vertices,faces):
+def getActualizedStartingGate(first_gate, vertices, faces):
+    print(f"First gate: {first_gate}")
+    print(f"vertices {[v.id for v in vertices]}")
+    print(f"{[v.id for v in vertices if v.id == first_gate[0]]}")
+    print(f"{[v.id for v in vertices if v.id == first_gate[1]]}")
+
+    first_gate_vertices = [next(v for v in vertices if v.id == first_gate[0]),
+                           next(v for v in vertices if v.id == first_gate[1])]
+
+    # print(f"Available faces:")
+    # for f in faces:
+    #     print(f"{[v.id for v in f.vertices]}")
+
+    first_gate_front_face = next((f for f in faces if
+                                      first_gate[0] in [v.id for v in f.vertices]
+                                  and first_gate[1] in [v.id for v in f.vertices]
+                                  and first_gate[2]  in [v.id for v in f.vertices]), None)
+
+    gate = Gate(first_gate_front_face, first_gate_vertices)
+    print(f"Found entry gate: {[v.id for v in gate.vertices]}")
+    print(f"front face = {gate.front_face}")
+    print(f"front ver = {gate.getFrontVertex().id}")
+    return gate
+
+def patchDiscovery3(list_valence,first_gate,list_coord_frenet, removed_vertex_indices,vertices,faces, operations):
 
     """
     Effectue la découverte de patch comme si nous étions dans une cleaning conquest.
@@ -108,81 +184,85 @@ def patchDiscovery3(list_valence,first_gate,list_coord_frenet,vertices,faces):
                 list_coord_frenet[i] est associée à list_valence[i]
     :param [in/out] vertices: ensemble des vertices présents dans la mesh
     :param [in/out] faces:  ensemble des faces présentes dans la mesh
+    :param [in/out] operations:  modèle renvoyant un fichier .obja
     """
 
     fifo_gate = []
-    
-    fifo_gate.append(first_gate)
+    gate = getActualizedStartingGate(first_gate, vertices, faces)
+    fifo_gate.append(gate)
+
     # Boucle de parcours de la mesh
     while fifo_gate != []:
-        
+        # print(f"valences: {list_valence}")
         # On récupère la porte d'entrée
         entry_gate = fifo_gate.pop(0)
-        list_vertices = entry_gate.vertices
-        # On récupère la face commune est free aux deux vertices 
-        face_vertices = entry_gate.front_face
-        
-        if face_vertices[0].flag == Flag.Free: # Juste une vérif mais normalement que des free
+
+        print("")
+        print(f"_____ New patch (cleaning decompression) _____")
+        print(f"entry gate: {[v.id for v in entry_gate.vertices]}, front ver = {entry_gate.getFrontVertex().id}, front face id = {entry_gate.front_face.id}, front face flag = {entry_gate.front_face.flag}")
+        print(f"entry_gate.front_face in faces {entry_gate.front_face in faces}")
+
+        front_face = entry_gate.front_face
+        front_vertex = entry_gate.getFrontVertex()
+        bounding_vertices = [entry_gate.vertices[0], entry_gate.vertices[1], front_vertex]
+
+        # for vertex in bounding_vertices:
+        #         print(f"attached_faces de {vertex.id}")
+        #         for f in vertex.attached_faces:
+        #             print(f"    attached face: {[v.id for v in f.vertices]}")
+        #         print(f"")
+
+        if front_face.flag == Flag.Free and (front_face in faces): # Juste une vérif mais normalement que des free
             # On récupère la valence et les coordonnées du point à ajouter
-            valence = list_valence.pop(0) 
-            # On récupère son alpha, beta et gamma
-            frenet = list_coord_frenet.pop(0)
+            valence = list_valence.pop(0)
 
+            if valence == -1:
+                raise Exception("manifold broken")
+                return
+
+            is_null_patch = valence == 0
+
+            
             # Création du patch
-            patch_add = Patch(0, entry_gate, valence ==0)
+            patch_add = Patch(0, entry_gate, is_null_patch, bounding_vertices)
+            print(f"valence liste: {valence}, patch valence: {patch_add.getValence()}")
+            print(f"is null patch: {patch_add.is_null_patch}")
+            print(f"bounding: {[v.id for v in patch_add.bounding_vertices]}")
+            
+            if not is_null_patch:
+                # On récupère son alpha, beta et gamma
+                frenet = list_coord_frenet.pop(0)
 
-            # Récupération des bounding vertices
-            list_vertices.append(entry_gate.getFrontVertex())
-            patch_add.bounding_vertices = list_vertices # nécessaire pour les méthodes sur patch_add.
+                idx = removed_vertex_indices.pop(0)
+
+                # Récupération de la base
+                creationVertex(frenet, patch_add, idx, vertices, operations)
             
-            # Récupération de la base
-            """[n,t1,t2,b] = patch_add.getFrenet()
-            vr_aux = b + frenet[0]*t1 + frenet[1]*t2 + frenet[2]*n
-            vr = Vertex( 0, [], Flag.Conquered, Tag.Plus, vr_aux[0], vr_aux[1], vr_aux[2])
-            """
-            vr = creationVertex(frenet, patch_add)
-            vertices.append(vr)
+                # Création des nouvelles faces et ajout dans les vertices
+                creationFaces(patch_add, faces, operations)
             
-            
-            # Création des nouvelles faces et ajout dans les vertices
-            """
-            new_face1 = Face(0,Flag.Conquered,[vert1,vert2,vr])
-            new_face2 = Face(0,Flag.Conquered,[vert2,vert3,vr])
-            new_face3 = Face(0,Flag.Conquered,[vert3,vert1,vr])
-            faces += [new_face1,new_face2,new_face3]
-            vert1.attached_faces += [new_face1,new_face3]
-            vert2.attached_faces += [new_face1,new_face2]
-            vert3.attached_faces += [new_face2,new_face3]
-            vr.attached_faces = [new_face1,new_face2,new_face3]
-            """
-            creationFaces(list_vertices, vr, faces)
-            
-            # Suppression de la face dans les vertices et dans faces
-            """
-            vert1.attached_faces.removed(face_vertices)
-            vert2.attached_faces.removed(face_vertices)
-            vert3.attached_faces.removed(face_vertices)
-            faces.remove(face_vertices)
-            """
-            supprimerFace(face_vertices,faces)
+                # Suppression de la face dans les vertices et dans faces
+                supprimerFace(front_face,faces, operations)
+            else:
+                entry_gate.front_face.flag = Flag.Conquered
+                print(f"   ____________ Conquered face: {[v.id for v in entry_gate.front_face.vertices]}")
 
             # tagging des vertexs
-            for vertex in list_vertices:
+            for vertex in bounding_vertices:
                 vertex.flag = Flag.Conquered
 
             # Ajout des gates
-            """
-            face32 = getFaceWithVertices(vert3,vert2)
-            face13 = getFaceWithVertices(vert1,vert3)
-            if(face32.flag == Flag.Free):
-                fifo_gate.append(Gate(face32,[vert3,vert2]))
-            if(face13.flag == Flag.Free):
-                fifo_gate.append(Gate(face13,[vert1,vert3]))
-            """
             output_gates = patch_add.getOutputGates()
+            # for o in output_gates:
+            #     print(f"    Output gates: {[v.id for v in o.vertices]}, front ver = {o.getFrontVertex().id}")
+
+            # for f in faces:
+            #     print(f"{[v.id for v in f.vertices]}")
             ajouterGatesCleaning(output_gates,patch_add,fifo_gate)
+        else:
+            print(f"Front face already conquered")
     
-def patchDiscovery(list_valence,first_gate,list_coord_frenet,vertices,faces):
+def patchDiscovery(list_valence, first_gate, list_coord_frenet, removed_vertex_indices, vertices, faces, operations):
 
     """
     Effectue la découverte de patch comme si nous étions dans une decimation conquest.
@@ -194,167 +274,242 @@ def patchDiscovery(list_valence,first_gate,list_coord_frenet,vertices,faces):
                 list_coord_frenet[i] est associée à list_valence[i]
     :param [in/out] vertices: ensemble des vertices présents dans la mesh
     :param [in/out] faces:  ensemble des faces présentes dans la mesh
+    :param [in/out] operations:  modèle renvoyant un fichier .obja
     """
 
     fifo_gate = []
-    fifo_gate.append(first_gate)
+    gate = getActualizedStartingGate(first_gate, vertices, faces)
+
+    # On tag les vertices d'entrée
+    gate.vertices[0].tag = Tag.Plus
+    gate.vertices[1].tag = Tag.Minus
+
+    fifo_gate.append(gate)
 
     # Variable répondant à la question : faut-il passer à la valence suivante ?
-    next_valence = True
 
     while fifo_gate != []:
+        # print(f"valences: {list_valence}")
+        # On récupère la porte d'entrée
+        entry_gate = fifo_gate.pop(0)
 
-        entry_gate = fifo_gate[0]
-        if next_valence:
+        print("")
+        print(f"_____ New patch (Decimating decompression) _____")
+        print(f"entry gate: {[v.id for v in entry_gate.vertices]}, front ver = {entry_gate.getFrontVertex().id}, front face id = {entry_gate.front_face.id}, front face flag = {entry_gate.front_face.flag} front face tags = {[v.tag for v in entry_gate.vertices]}")
+        print(f"entry_gate.front_face in faces {entry_gate.front_face in faces}")
+
+        front_face = entry_gate.front_face
+        front_vertex = entry_gate.getFrontVertex()
+
+        if front_face.flag == Flag.Free and (front_face in faces):
+
             valence = list_valence.pop(0)
-            # On récupère son alpha, beta et gamma
-            frenet = list_coord_frenet.pop(0)
-            # On s'empêche de passer à la valence suivante
-            # Tant que celle-ci n'a pas été traitée.
-            next_valence = False
+
+            if valence == -1:
+                raise Exception("manifold broken")
+                return
+
+            print(f"valence liste: {valence}")
         
-        # Récupération des bounding vertices
-        list_vertices = entry_gate.vertices
-        entry_faces = [entry_gate.front_face]
+            # --------------- Récupération des bounding vertices --------------- 
+            bounding_vertices = entry_gate.vertices[:]
+            entry_faces = [front_face]
+            match valence :
+                case 0:
+                    patch_add = Patch(0, entry_gate,True)
+                    print(f"null patch entry gate: {[v.id for v in entry_gate.vertices]}, front ver = {entry_gate.getFrontVertex().id}")
+                    print(f"{[v.id for v in patch_add.bounding_vertices]}, tags: {[v.tag for v in patch_add.bounding_vertices]}")
+                case 3:
+                    # Récupération des bounding vertices
+                    bounding_vertices.append(entry_gate.getFrontVertex())
 
-        # On tag les vertices d'entrée
-        list_vertices[0].tag = Tag.Plus
-        list_vertices[1].tag = Tag.Minus
+                    # Création du patch
+                    patch_add = Patch(0, entry_gate,False, bounding_vertices)
 
-        match valence :
-            case 3:
-                # Récupération des bounding vertices
-                list_vertices.append(entry_gate.getFrontVertex())
-
-                # Création du patch
-                patch_add = Patch(0, entry_gate,False)
-                patch_add.bounding_vertices = list_vertices # nécessaire pour les méthodes sur patch_add.
+                    print(f"center vertex: {patch_add.center_vertex.id}")
                     
-            case 4:
-                # Création du patch et
-                # Récupération des bounding vertices
-                patch_add = Patch(0, entry_gate,False)
-
-                if list_vertices[1].tag == Tag.Minus:
-                    list_vertices.append(entry_gate.getFrontVertex())
-                    entry_faces.append(getAdjacentFace(entry_faces[0], list_vertices[0], list_vertices[2]))
-                    if entry_faces[1] is not None:
-                        list_vertices.append(getThirdVertex(entry_faces[1], list_vertices[0], list_vertices[2]))
-                else :
-                    vert4 = entry_gate.getFrontVertex()
-                    face = getAdjacentFace(entry_faces[0], vert4, list_vertices[1])
-                    if face is not None:
-                        list_vertices.append(getThirdVertex(face, vert4, list_vertices[1]))
-                    list_vertices.append(vert4)
-
-                patch_add.bounding_vertices = list_vertices
-            
-            case 5:
-                # Création du patch et
-                # Récupération des bounding vertices
-                patch_add = Patch(0, entry_gate,False)
-                if list_vertices[1].tag == Tag.Minus:
-                    # Premiere face sur 3
-                    list_vertices.append(entry_gate.getFrontVertex())
-                    entry_faces.append(getAdjacentFace(entry_faces[0], list_vertices[0], list_vertices[2]))
-                    if entry_faces[1] is not None:
-                        # 2e face sur 3
-                        vert5 = getThirdVertex(entry_faces[1], list_vertices[0], list_vertices[2])
-                        entry_faces.append(getAdjacentFace(entry_faces[1], vert5, list_vertices[2]))
-                        if entry_faces[2] is not None:
-                            # 3e face sur 3
-                            list_vertices.append(getThirdVertex(entry_faces[2], vert5, list_vertices[2]))
+                case 4:
+                    # Récupération des bounding vertices
+                    if bounding_vertices[1].tag == Tag.Minus:
+                        bounding_vertices.append(entry_gate.getFrontVertex())
+                        entry_faces.append(getAdjacentFace(entry_faces[0], bounding_vertices[0], bounding_vertices[2]))
+                        if entry_faces[1] is not None:
+                            bounding_vertices.append(getThirdVertex(entry_faces[1], bounding_vertices[0], bounding_vertices[2]))
                         else:
-                            patch_add.is_null_patch = True
-                        list_vertices.append(vert5)
+                            raise Exception(f"pas de face trouvée cas {valence} tag {bounding_vertices[1].tag}")
+                    else :
+                        vert4 = entry_gate.getFrontVertex()
+                        face = getAdjacentFace(entry_faces[0], vert4, bounding_vertices[1])
+                        # print(f"front face = {[v.id for v in entry_faces[0].vertices]}")
+                        # s = "connected faces v1\n"
+                        # for f in vert4.attached_faces:
+                        #     s += f"{[v.id for v in f.vertices]}\n"
+                        # print(s)
+                        # s = "toto\n"
+                        # for f in faces:
+                        #     s += f"{[v.id for v in f.vertices]}\n"
+                        # print(s)
+                        if face is not None:
+                            entry_faces.append(face)
+                            bounding_vertices.append(getThirdVertex(face, vert4, bounding_vertices[1]))
+                        else:
+                            raise Exception(f"pas de face trouvée cas {valence} tag {bounding_vertices[1].tag}")
+                        bounding_vertices.append(vert4)
+
+                    # Création du patch
+                    patch_add = Patch(0, entry_gate,False, bounding_vertices)
+                case 5:
+                    # Récupération des bounding vertices
+                    if bounding_vertices[1].tag == Tag.Minus:
+                        # Premiere face sur 3
+                        bounding_vertices.append(entry_gate.getFrontVertex())
+                        entry_faces.append(getAdjacentFace(entry_faces[0], bounding_vertices[0], bounding_vertices[2]))
+                        if entry_faces[1] is not None:
+                            # 2e face sur 3
+                            vert5 = getThirdVertex(entry_faces[1], bounding_vertices[0], bounding_vertices[2])
+                            entry_faces.append(getAdjacentFace(entry_faces[1], vert5, bounding_vertices[2]))
+                            if entry_faces[2] is not None:
+                                # 3e face sur 3
+                                bounding_vertices.append(getThirdVertex(entry_faces[2], vert5, bounding_vertices[2]))
+                            else:
+                                raise Exception(f"pas de face trouvée cas {valence} tag {bounding_vertices[1].tag}")
+                            bounding_vertices.append(vert5)
+                        else:
+                            raise Exception(f"pas de face trouvée cas {valence} tag {bounding_vertices[1].tag}")
+                    elif bounding_vertices[0].tag == Tag.Minus:
+                        # Premiere face sur 3
+                        vert5 =entry_gate.getFrontVertex()
+                        entry_faces.append(getAdjacentFace(entry_faces[0], vert5, bounding_vertices[1]))
+                        if entry_faces[1] is not None:
+                            # 2e face sur 3
+                            bounding_vertices.append(getThirdVertex(entry_faces[1], vert5, bounding_vertices[1]))
+                            entry_faces.append(getAdjacentFace(entry_faces[1], vert5, bounding_vertices[2]))
+                            if entry_faces[2] is not None:
+                                # 3e face sur 3
+                                bounding_vertices.append(getThirdVertex(entry_faces[2], vert5, bounding_vertices[2]))
+                            else:
+                                raise Exception(f"pas de face trouvée cas {valence} tag {bounding_vertices[1].tag}")
+                        else:
+                            raise Exception(f"pas de face trouvée cas {valence} tag {bounding_vertices[1].tag}")
+                        bounding_vertices.append(vert5)
                     else:
-                        patch_add.is_null_patch = True
-                elif list_vertices[0].tag == Tag.Minus:
-                    # Premiere face sur 3
-                    vert5 =entry_gate.getFrontVertex()
-                    entry_faces.append(getAdjacentFace(entry_faces[0], vert5, list_vertices[1]))
-                    if entry_faces[1] is not None:
-                        # 2e face sur 3
-                        list_vertices.append(getThirdVertex(entry_faces[1], vert5, list_vertices[1]))
-                        entry_faces.append(getAdjacentFace(entry_faces[1], vert5, list_vertices[2]))
-                        if entry_faces[2] is not None:
-                            # 3e face sur 3
-                            list_vertices.append(getThirdVertex(entry_faces[2], vert5, list_vertices[2]))
-                    list_vertices.append(vert5)
+                        # Premiere face sur 3
+                        vert4 =entry_gate.getFrontVertex()
+                        entry_faces.append(getAdjacentFace(entry_faces[0], vert4, bounding_vertices[1]))
+                        if entry_faces[1] is not None:
+                            # 2e face sur 3
+                            bounding_vertices.append(getThirdVertex(entry_faces[1], vert4, bounding_vertices[1]))
+                            bounding_vertices.append(vert4)
+                            entry_faces.append(getAdjacentFace(entry_faces[0], bounding_vertices[0], bounding_vertices[3]))
+                            if entry_faces[2] is not None:
+                                # 3e face sur 3
+                                bounding_vertices.append(getThirdVertex(entry_faces[2], bounding_vertices[0], bounding_vertices[3]))
+                            else:
+                                raise Exception(f"pas de face trouvée cas {valence} tag {bounding_vertices[1].tag}")
+                        else:
+                            raise Exception(f"pas de face trouvée cas {valence} tag {bounding_vertices[1].tag}")
 
-                else:
-                    # Premiere face sur 3
-                    vert4 =entry_gate.getFrontVertex()
-                    entry_faces.append(getAdjacentFace(entry_faces[0], vert4, list_vertices[1]))
-                    if entry_faces[1] is not None:
-                        # 2e face sur 3
-                        list_vertices.append(getThirdVertex(entry_faces[1], vert4, list_vertices[1]))
-                        list_vertices.append(vert4)
-                        entry_faces.append(getAdjacentFace(entry_faces[1], list_vertices[0], list_vertices[3]))
-                        if entry_faces[2] is not None:
-                            # 3e face sur 3
-                            list_vertices.append(getThirdVertex(entry_faces[2], list_vertices[0], list_vertices[3]))
+                    # Création du patch
+                    print(f"entry_gate vertices {[v.id for v in entry_gate.vertices]}")
+                    print(f"front_face {[v.id for v in entry_gate.front_face.vertices]}, flag {entry_gate.front_face.flag}")
+                    print(f"FrontVertex {entry_gate.getFrontVertex().id}")
+                    print(f"bounding Vertex {[v.id for v in bounding_vertices]}")
+                    patch_add = Patch(0, entry_gate,False, bounding_vertices)
 
-                patch_add.bounding_vertices = list_vertices
-                
+                case 6:
+                    # Récupération des bounding vertices
+                    if bounding_vertices[1].tag == Tag.Minus:
+                        # Premiere face sur 4
+                        bounding_vertices.append(entry_gate.getFrontVertex())
+                        entry_faces.append(getAdjacentFace(entry_faces[0], bounding_vertices[0], bounding_vertices[2]))
+                        if entry_faces[1] is not None:
+                            # 2e face sur 4
+                            vert5 = getThirdVertex(entry_faces[1], bounding_vertices[0], bounding_vertices[2])
+                            entry_faces.append(getAdjacentFace(entry_faces[1], vert5, bounding_vertices[2]))
+                            if entry_faces[2] is not None:
+                                # 3e face sur 4
+                                bounding_vertices.append(getThirdVertex(entry_faces[2], vert5, bounding_vertices[2]))
+                                bounding_vertices.append(vert5)
+                                entry_faces.append(getAdjacentFace(entry_faces[1], bounding_vertices[0], vert5))
+                                if entry_faces[3] is not None:
+                                    # 4e face sur 4
+                                    bounding_vertices.append(getThirdVertex(entry_faces[3], bounding_vertices[0], vert5))
+                                else:
+                                    raise Exception(f"pas de face trouvée cas {valence} tag {bounding_vertices[1].tag}")
+                            else:
+                                raise Exception(f"pas de face trouvée cas {valence} tag {bounding_vertices[1].tag}")
+                        else:
+                            raise Exception(f"pas de face trouvée cas {valence} tag {bounding_vertices[1].tag}")
+                    else:
+                        # Premiere face sur 4
+                        vert6 =entry_gate.getFrontVertex()
+                        entry_faces.append(getAdjacentFace(entry_faces[0], vert6, bounding_vertices[1]))
+                        if entry_faces[1] is not None:
+                            # 2e face sur 4
+                            vert4 = getThirdVertex(entry_faces[1], vert6, bounding_vertices[1])
+                            entry_faces.append(getAdjacentFace(entry_faces[1], vert4, bounding_vertices[1]))
+                            if entry_faces[2] is not None:
+                                # 3e face sur 4
+                                bounding_vertices.append(getThirdVertex(entry_faces[2], vert4, bounding_vertices[1]))
+                                bounding_vertices.append(vert4)
+                                entry_faces.append(getAdjacentFace(entry_faces[1], vert6, bounding_vertices[3]))
+                                if entry_faces[3] is not None:
+                                    # 4e face sur 4
+                                    bounding_vertices.append(getThirdVertex(entry_faces[3], vert6, bounding_vertices[3]))
+                                else:
+                                    raise Exception(f"pas de face trouvée cas {valence} tag {bounding_vertices[1].tag}")
+                            else:
+                                raise Exception(f"pas de face trouvée cas {valence} tag {bounding_vertices[1].tag}")
+                        else:
+                            raise Exception(f"pas de face trouvée cas {valence} tag {bounding_vertices[1].tag}")
+                        bounding_vertices.append(vert6)
 
-            case 6:
-                # Création du patch et
-                # Récupération des bounding vertices
-                patch_add = Patch(0, entry_gate,False)
-                if list_vertices[1].tag == Tag.Minus:
-                    # Premiere face sur 4
-                    list_vertices.append(entry_gate.getFrontVertex())
-                    entry_faces.append(getAdjacentFace(entry_faces[0], list_vertices[0], list_vertices[2]))
-                    if entry_faces[1] is not None:
-                        # 2e face sur 4
-                        vert5 = getThirdVertex(entry_faces[1], list_vertices[0], list_vertices[2])
-                        entry_faces.append(getAdjacentFace(entry_faces[1], vert5, list_vertices[2]))
-                        if entry_faces[2] is not None:
-                            # 3e face sur 4
-                            list_vertices.append(getThirdVertex(entry_faces[2], vert5, list_vertices[2]))
-                            list_vertices.append(vert5)
-                            entry_faces.append(getAdjacentFace(entry_faces[2], list_vertices[0], list_vertices[4]))
-                            if entry_faces[3] is not None:
-                                # 4e face sur 4
-                                list_vertices.append(getThirdVertex(entry_faces[3], list_vertices[0], list_vertices[4]))
-                else:
-                    # Premiere face sur 4
-                    vert6 =entry_gate.getFrontVertex()
-                    entry_faces.append(getAdjacentFace(entry_faces[0], vert6, list_vertices[1]))
-                    if entry_faces[1] is not None:
-                        # 2e face sur 4
-                        vert4 = getThirdVertex(entry_faces[1], vert6, list_vertices[1])
-                        entry_faces.append(getAdjacentFace(entry_faces[1], vert4, list_vertices[1]))
-                        if entry_faces[2] is not None:
-                            # 3e face sur 4
-                            list_vertices.append(getThirdVertex(entry_faces[2], vert4, list_vertices[1]))
-                            list_vertices.append(vert4)
-                            entry_faces.append(getAdjacentFace(entry_faces[1], vert6, list_vertices[3]))
-                            if entry_faces[3] is not None:
-                                # 4e face sur 4
-                                list_vertices.append(getThirdVertex(entry_faces[3], vert6, list_vertices[3]))
-                    list_vertices.append(vert6)
+                    # Création du patch
+                    patch_add = Patch(0, entry_gate,False,bounding_vertices)
 
-                patch_add.bounding_vertices = list_vertices
+            patch_add.setTags()
 
-        # Récupération de la base
-        vr = creationVertex(frenet, patch_add)
-        vertices.append(vr)
+            print(f"Patch bounding discovery results:")
+            print(f"    bounding: {[v.id for v in patch_add.bounding_vertices]}, tags: {[v.tag for v in patch_add.bounding_vertices]}")
+            print(f"    center vertex: {patch_add.center_vertex.id}")
+            print(f"    valence liste: {valence}, (patch valence: {patch_add.getValence()})")
+            print(f"    is null patch: {patch_add.is_null_patch}")
+            # --------------- Fin Récupération des bounding vertices --------------- 
 
+            if not patch_add.is_null_patch:
+                # On récupère son alpha, beta et gamma
+                frenet = list_coord_frenet.pop(0)
 
-        # Création des nouvelles faces et ajout dans les vertices
-        creationFaces(list_vertices, vr, faces)
+                idx = removed_vertex_indices.pop(0)
 
-        # Suppression de la face dans les vertices et dans faces
-        supprimerFacesMultiple(entry_faces, faces)
+                # Récupération de la base
+                creationVertex(frenet, patch_add, idx, vertices, operations)
 
-        # tagging des vertexs
-        for vertex in list_vertices:
-            vertex.flag = Flag.Conquered
+                # Création des nouvelles faces et ajout dans les vertices
+                creationFaces(patch_add, faces,operations)
 
-        output_gates = patch_add.getOutputGates()
-        fifo_gate += output_gates
+                # Suppression de la face dans les vertices et dans faces
+                supprimerFacesMultiple(entry_faces, faces, operations)
+            else:
+                entry_gate.front_face.flag = Flag.Conquered
+
+            # flagging des vertexs
+            for vertex in patch_add.bounding_vertices:
+                vertex.flag = Flag.Conquered
+
+            if patch_add.is_null_patch:
+                patch_add.entry_gate.front_face.flag = Flag.Conquered
+
+            output_gates = patch_add.getOutputGates()
+
+            # s = "\nAdding to fifo:\n"
+            # for g in output_gates:
+            #     s += f"{[v.id for v in g.vertices]} front vert = {g.getFrontVertex().id}\n"
+            # print(s)
+
+            fifo_gate += output_gates
+        else:
+            print(f"Front face already conquered")
     return 0
 
 

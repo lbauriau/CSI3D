@@ -18,11 +18,11 @@ def removedVertex(patch_to_remove,vertices, faces):
 
     print(f"    Computing patch with center vertex {patch_to_remove.center_vertex.id} (valence {patch_to_remove.getValence()}).")# Available faces: {[f.id for f in faces]}").
 
-    patch_bounding_vertices = patch_to_remove.bounding_vertices
+    patch_bounding_vertices = patch_to_remove.bounding_vertices[:]
     
     # On récupère le vertex à enlever ainsi que ces faces attachées
     vertex_to_remove = patch_to_remove.center_vertex
-    attached_faces_to_remove = vertex_to_remove.attached_faces
+    attached_faces_to_remove = vertex_to_remove.attached_faces[:]
 
     print(f"    faces to remove {[f.id for f in attached_faces_to_remove]}")
 
@@ -32,7 +32,7 @@ def removedVertex(patch_to_remove,vertices, faces):
     
     # On récupère la face d'entrée pour faire correctement le flag
     entryGate = patch_to_remove.entry_gate
-    [vertex1,vertex2] = entryGate.vertices
+    [vertex1,vertex2] = entryGate.vertices[:]
     flag1 = vertex1.flag
     flag2 = vertex2.flag
 
@@ -167,11 +167,12 @@ def removedVertex(patch_to_remove,vertices, faces):
         face = attached_faces_to_remove.pop(0)
         if face in faces:
             faces.remove(face)
-            print(f"        removed face {face.id} from main list")
+            print(f"        removed face {face.id} {[v.id for v in face.vertices]} from main list")
         for vertex in face.vertices: 
             if face in vertex.attached_faces:
                 vertex.attached_faces.remove(face)
-                print(f"        removed face {face.id} from vertex {vertex.id} attached faces")
+                # print(f"        removed face {face.id} from vertex {vertex.id} attached faces")
     
     # On enlève le vertex de la liste des vertex
+    print(f"    removed vertex {vertex_to_remove.id}")
     vertices.remove(vertex_to_remove)
