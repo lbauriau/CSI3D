@@ -16,7 +16,7 @@ def discovery(list_valence, list_gate, list_coord_frenet, removed_vertex_indices
     :param [in/out] operation:  modèle renvoyant un fichier .obja
     """
     i = 1
-    while (list_gate!=[]) and i < 7:
+    while (list_gate!=[]):
         print(f"______________ Debut decoding Cleaning {i} _______________")
 
         # On reverse le cleaning
@@ -141,13 +141,11 @@ def ajouterGatesCleaning(output_gates, patch, fifo):
     else:
         for gate in output_gates:
             gate.front_face.flag = Flag.Conquered
-            print(f"    ________________ Conquered face: {gate.front_face.id}")
-        for gate in output_gates:
+            print(f"   ____________ Conquered face: {gate.front_face.id} {[v.id for v in gate.front_face.vertices]}")
             gates = Patch(0,gate, True).getOutputGates()
             for g in gates:
-                    g.getFrontVertex().flag = Flag.Conquered
-            for o in gates:
-                print(f"    Good patch => ajout de la gate à la fifo: {[v.id for v in o.vertices]}, front ver = {o.getFrontVertex().id}")
+                g.getFrontVertex().flag = Flag.Conquered
+                print(f"    Good patch => ajout de la gate à la fifo: {[v.id for v in g.vertices]}, front ver = {g.getFrontVertex().id}")
             fifo += gates
 
 def getActualizedStartingGate(first_gate, vertices, faces):
@@ -155,11 +153,14 @@ def getActualizedStartingGate(first_gate, vertices, faces):
     print(f"vertices {[v.id for v in vertices]}")
     print(f"{[v.id for v in vertices if v.id == first_gate[0]]}")
     print(f"{[v.id for v in vertices if v.id == first_gate[1]]}")
+
     first_gate_vertices = [next(v for v in vertices if v.id == first_gate[0]),
                            next(v for v in vertices if v.id == first_gate[1])]
-    print(f"Available faces:")
-    for f in faces:
-        print(f"{[v.id for v in f.vertices]}")
+
+    # print(f"Available faces:")
+    # for f in faces:
+    #     print(f"{[v.id for v in f.vertices]}")
+
     first_gate_front_face = next((f for f in faces if
                                       first_gate[0] in [v.id for v in f.vertices]
                                   and first_gate[1] in [v.id for v in f.vertices]
@@ -192,7 +193,7 @@ def patchDiscovery3(list_valence,first_gate,list_coord_frenet, removed_vertex_in
 
     # Boucle de parcours de la mesh
     while fifo_gate != []:
-        print(f"valences: {list_valence}")
+        # print(f"valences: {list_valence}")
         # On récupère la porte d'entrée
         entry_gate = fifo_gate.pop(0)
 
@@ -244,7 +245,7 @@ def patchDiscovery3(list_valence,first_gate,list_coord_frenet, removed_vertex_in
                 supprimerFace(front_face,faces, operations)
             else:
                 entry_gate.front_face.flag = Flag.Conquered
-                print(f"   ____________ Conquered face: {entry_gate.front_face.id}")
+                print(f"   ____________ Conquered face: {[v.id for v in entry_gate.front_face.vertices]}")
 
             # tagging des vertexs
             for vertex in bounding_vertices:
@@ -255,6 +256,8 @@ def patchDiscovery3(list_valence,first_gate,list_coord_frenet, removed_vertex_in
             # for o in output_gates:
             #     print(f"    Output gates: {[v.id for v in o.vertices]}, front ver = {o.getFrontVertex().id}")
 
+            # for f in faces:
+            #     print(f"{[v.id for v in f.vertices]}")
             ajouterGatesCleaning(output_gates,patch_add,fifo_gate)
         else:
             print(f"Front face already conquered")
@@ -286,13 +289,13 @@ def patchDiscovery(list_valence, first_gate, list_coord_frenet, removed_vertex_i
     # Variable répondant à la question : faut-il passer à la valence suivante ?
 
     while fifo_gate != []:
-        print(f"valences: {list_valence}")
+        # print(f"valences: {list_valence}")
         # On récupère la porte d'entrée
         entry_gate = fifo_gate.pop(0)
 
         print("")
         print(f"_____ New patch (Decimating decompression) _____")
-        print(f"entry gate: {[v.id for v in entry_gate.vertices]}, front ver = {entry_gate.getFrontVertex().id}, front face id = {entry_gate.front_face.id}, front face flag = {entry_gate.front_face.flag}")
+        print(f"entry gate: {[v.id for v in entry_gate.vertices]}, front ver = {entry_gate.getFrontVertex().id}, front face id = {entry_gate.front_face.id}, front face flag = {entry_gate.front_face.flag} front face tags = {[v.tag for v in entry_gate.vertices]}")
         print(f"entry_gate.front_face in faces {entry_gate.front_face in faces}")
 
         front_face = entry_gate.front_face
@@ -337,7 +340,17 @@ def patchDiscovery(list_valence, first_gate, list_coord_frenet, removed_vertex_i
                     else :
                         vert4 = entry_gate.getFrontVertex()
                         face = getAdjacentFace(entry_faces[0], vert4, bounding_vertices[1])
+                        # print(f"front face = {[v.id for v in entry_faces[0].vertices]}")
+                        # s = "connected faces v1\n"
+                        # for f in vert4.attached_faces:
+                        #     s += f"{[v.id for v in f.vertices]}\n"
+                        # print(s)
+                        # s = "toto\n"
+                        # for f in faces:
+                        #     s += f"{[v.id for v in f.vertices]}\n"
+                        # print(s)
                         if face is not None:
+                            entry_faces.append(face)
                             bounding_vertices.append(getThirdVertex(face, vert4, bounding_vertices[1]))
                         else:
                             raise Exception(f"pas de face trouvée cas {valence} tag {bounding_vertices[1].tag}")
@@ -387,7 +400,7 @@ def patchDiscovery(list_valence, first_gate, list_coord_frenet, removed_vertex_i
                             # 2e face sur 3
                             bounding_vertices.append(getThirdVertex(entry_faces[1], vert4, bounding_vertices[1]))
                             bounding_vertices.append(vert4)
-                            entry_faces.append(getAdjacentFace(entry_faces[1], bounding_vertices[0], bounding_vertices[3]))
+                            entry_faces.append(getAdjacentFace(entry_faces[0], bounding_vertices[0], bounding_vertices[3]))
                             if entry_faces[2] is not None:
                                 # 3e face sur 3
                                 bounding_vertices.append(getThirdVertex(entry_faces[2], bounding_vertices[0], bounding_vertices[3]))
@@ -397,10 +410,10 @@ def patchDiscovery(list_valence, first_gate, list_coord_frenet, removed_vertex_i
                             raise Exception(f"pas de face trouvée cas {valence} tag {bounding_vertices[1].tag}")
 
                     # Création du patch
-                    print(f"entry_gate {entry_gate}")
                     print(f"entry_gate vertices {[v.id for v in entry_gate.vertices]}")
-                    print(f"front_face {entry_gate.front_face}")
-                    print(f"FrontVertex {entry_gate.getFrontVertex()}")
+                    print(f"front_face {[v.id for v in entry_gate.front_face.vertices]}, flag {entry_gate.front_face.flag}")
+                    print(f"FrontVertex {entry_gate.getFrontVertex().id}")
+                    print(f"bounding Vertex {[v.id for v in bounding_vertices]}")
                     patch_add = Patch(0, entry_gate,False, bounding_vertices)
 
                 case 6:
@@ -417,10 +430,10 @@ def patchDiscovery(list_valence, first_gate, list_coord_frenet, removed_vertex_i
                                 # 3e face sur 4
                                 bounding_vertices.append(getThirdVertex(entry_faces[2], vert5, bounding_vertices[2]))
                                 bounding_vertices.append(vert5)
-                                entry_faces.append(getAdjacentFace(entry_faces[2], bounding_vertices[0], bounding_vertices[4]))
+                                entry_faces.append(getAdjacentFace(entry_faces[1], bounding_vertices[0], vert5))
                                 if entry_faces[3] is not None:
                                     # 4e face sur 4
-                                    bounding_vertices.append(getThirdVertex(entry_faces[3], bounding_vertices[0], bounding_vertices[4]))
+                                    bounding_vertices.append(getThirdVertex(entry_faces[3], bounding_vertices[0], vert5))
                                 else:
                                     raise Exception(f"pas de face trouvée cas {valence} tag {bounding_vertices[1].tag}")
                             else:
@@ -488,6 +501,12 @@ def patchDiscovery(list_valence, first_gate, list_coord_frenet, removed_vertex_i
                 patch_add.entry_gate.front_face.flag = Flag.Conquered
 
             output_gates = patch_add.getOutputGates()
+
+            # s = "\nAdding to fifo:\n"
+            # for g in output_gates:
+            #     s += f"{[v.id for v in g.vertices]} front vert = {g.getFrontVertex().id}\n"
+            # print(s)
+
             fifo_gate += output_gates
         else:
             print(f"Front face already conquered")

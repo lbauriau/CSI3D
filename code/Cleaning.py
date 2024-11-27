@@ -46,7 +46,8 @@ def cleaningConquest(vertices, faces):
 
                 #On récupère les portes de sorties liées à ce patch
                 output_gates = current_patch.getOutputGates()
-                print(f"    -> Patch exit gate: {output_gates}")
+                for eg in output_gates:
+                    print(f"    -> Patch exit gate: {[v.id for v in eg.vertices]} f v = {eg.getFrontVertex().id}")
 
                 for v in current_patch.bounding_vertices:
                     v.flag = Flag.Conquered
@@ -55,9 +56,11 @@ def cleaningConquest(vertices, faces):
                 #ajoute à la fifo les outputs gates correctes
                 for gate in output_gates:
                     gate.front_face.flag = Flag.Conquered
-                for gate in output_gates:
                     gates = Patch(0,gate, True).getOutputGates()
+                    print(f"   ____________ Conquered face: {gate.front_face.id} {[v.id for v in gate.front_face.vertices]}")
+
                     for g in gates:
+                        print(f"   ____________ Side face: {g.front_face.id} {[v.id for v in g.front_face.vertices]}")
                         g.getFrontVertex().flag = Flag.Conquered
                     fifo += gates
                     print(f"        -> outputgate added to fifo: {[g for g in gates]}")
@@ -112,6 +115,8 @@ def cleaningConquest(vertices, faces):
     return bn, first_gate_idx, fren_coord, removed_vertex_indices
         
 def computeNullPatch(fifo, front_face, current_gate,bn):
+    for v in current_gate.vertices:
+        v.flag = Flag.Conquered
     print(f"    -> null patch found")
     front_face.flag = Flag.Conquered
     current_patch = Patch(0,current_gate, True)

@@ -61,7 +61,7 @@ class Decompressor(obja.Model):
             print("")
 
             # remise à zéros des flag et tag des vertices et faces après la conquête de décimation
-            resetFlagTagParam(self.vertices, self.faces)
+            resetFlagTagParam(self.faces, self.vertices)
 
             # Récupération des variables à transmettre au decoder pour le cleaning
             list_valence = output_iter + list_valence
@@ -75,7 +75,7 @@ class Decompressor(obja.Model):
             Bn, first_gate_clean, f_coord_clean, c_removed_vertex_indices = cleaningConquest(self.vertices, self.faces)
 
             # remise à zéros des flag et tag des vertices et faces après la conquête de cleaning
-            resetFlagTagParam(self.vertices, self.faces)
+            resetFlagTagParam(self.faces, self.vertices)
 
             # Récupération des variables à transmettre au decoder pour le cleaning
             list_valence = Bn + list_valence

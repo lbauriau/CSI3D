@@ -118,10 +118,14 @@ def treatNullPatch(fifo_gate, entry_gate, front_face, front_vertex, output):
     # The front face must be a null patch; we declare it conquered,
             front_face.flag = Flag.Conquered
 
-            if ((entry_gate.vertices[0].tag == Tag.Plus) and (entry_gate.vertices[1].tag == Tag.Plus)):
-                front_vertex.tag = Tag.Minus
-            else:
-                front_vertex.tag = Tag.Plus
+            if front_vertex.tag is None:
+                if ((entry_gate.vertices[0].tag == Tag.Plus) and (entry_gate.vertices[1].tag == Tag.Plus)):
+                    front_vertex.tag = Tag.Minus
+                else:
+                    front_vertex.tag = Tag.Plus
+
+            for v in entry_gate.vertices:
+                v.flag = Flag.Conquered
 
             print(f"    O Null patch found, len(front_vertex.attached_faces) = {len(front_vertex.attached_faces)})")
 

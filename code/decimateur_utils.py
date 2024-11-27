@@ -160,6 +160,8 @@ class Patch:
                 first_outside_face = first_outside_face[0]
                 output_gates.append(Gate(first_outside_face, [ gate.vertices[0], front_vertex ]))
 
+            for f in front_vertex.attached_faces:
+                print(f"Connected faces {[v.id for v in f.vertices]}")
             second_outside_face = [f for f in front_vertex.attached_faces if
                         (gate.vertices[1] in f.vertices and
                         gate.vertices[0] not in f.vertices and
@@ -198,51 +200,59 @@ class Patch:
     def setTags(self):
         i = 0
         gate_vertices = self.entry_gate.vertices
-        for nv in self.bounding_vertices:
-            if nv not in gate_vertices:
-                if (nv.tag is None):
-                    match self.getValence():
-                        case 3:
-                            if ((gate_vertices[0].tag == Tag.Plus) and (gate_vertices[1].tag == Tag.Plus)):
-                                nv.tag = Tag.Minus
-                            else:
-                                nv.tag = Tag.Plus
-                        case 4:
-                            if ((gate_vertices[0].tag == Tag.Minus) and (gate_vertices[1].tag == Tag.Plus) or ((gate_vertices[0].tag == Tag.Plus) and (gate_vertices[1].tag == Tag.Plus))) :
-                                if i%2:
+        if self.is_null_patch:
+            if self.entry_gate.getFrontVertex().tag is None:
+                if ((self.entry_gate.vertices[0].tag == Tag.Plus) and (self.entry_gate.vertices[1].tag == Tag.Plus)):
+                    self.entry_gate.getFrontVertex().tag = Tag.Minus
+                else:
+                    self.entry_gate.getFrontVertex().tag = Tag.Plus
+        else:
+            for nv in self.bounding_vertices:
+                if nv not in gate_vertices:
+                    if (nv.tag is None):
+                        match len(self.bounding_vertices):
+                            case 3:
+                                if ((gate_vertices[0].tag == Tag.Plus) and (gate_vertices[1].tag == Tag.Plus)):
                                     nv.tag = Tag.Minus
                                 else:
                                     nv.tag = Tag.Plus
-                            else: 
-                                if i%2:
-                                    nv.tag = Tag.Plus
-                                else:
-                                    nv.tag = Tag.Minus
-                        case 5:
-                            if ((gate_vertices[0].tag == Tag.Plus) and (gate_vertices[1].tag == Tag.Plus)) :
-                                if i%2:
-                                    nv.tag = Tag.Minus
-                                else:
-                                    nv.tag = Tag.Plus
-                            else: 
-                                if i%2:
-                                    nv.tag = Tag.Plus
-                                else:
-                                    nv.tag = Tag.Minus
-                        case 6:
-                            if ((gate_vertices[0].tag == Tag.Minus) and (gate_vertices[1].tag == Tag.Plus) or ((gate_vertices[0].tag == Tag.Plus) and (gate_vertices[1].tag == Tag.Plus))) :
-                                if i%2:
-                                    nv.tag = Tag.Minus
-                                else:
-                                    nv.tag = Tag.Plus
-                            else: 
-                                if i%2:
-                                    nv.tag = Tag.Plus
-                                else:
-                                    nv.tag = Tag.Minus
-                        case _:
-                            pass 
-                i +=1
+                            case 4:
+                                if ((gate_vertices[0].tag == Tag.Minus) and (gate_vertices[1].tag == Tag.Plus) or ((gate_vertices[0].tag == Tag.Plus) and (gate_vertices[1].tag == Tag.Plus))) :
+                                    if i%2:
+                                        nv.tag = Tag.Minus
+                                    else:
+                                        nv.tag = Tag.Plus
+                                else: 
+                                    if i%2:
+                                        nv.tag = Tag.Plus
+                                    else:
+                                        nv.tag = Tag.Minus
+                            case 5:
+                                if ((gate_vertices[0].tag == Tag.Plus) and (gate_vertices[1].tag == Tag.Plus)) :
+                                    if i%2:
+                                        nv.tag = Tag.Minus
+                                    else:
+                                        nv.tag = Tag.Plus
+                                else: 
+                                    if i%2:
+                                        nv.tag = Tag.Plus
+                                    else:
+                                        nv.tag = Tag.Minus
+                            case 6:
+                                if ((gate_vertices[0].tag == Tag.Minus) and (gate_vertices[1].tag == Tag.Plus) or ((gate_vertices[0].tag == Tag.Plus) and (gate_vertices[1].tag == Tag.Plus))) :
+                                    if i%2:
+                                        nv.tag = Tag.Minus
+                                    else:
+                                        nv.tag = Tag.Plus
+                                else: 
+                                    if i%2:
+                                        nv.tag = Tag.Plus
+                                    else:
+                                        nv.tag = Tag.Minus
+                            case _:
+                                raise Exception(f"    Error : valence: {self.getValence()}")
+                                pass 
+                    i +=1
 
     def getNormal(self):
         """
@@ -379,7 +389,7 @@ def getFirstGate(faces):
     #On choisit la "première" face stockée dans la liste de faces,
     #mais on pourrait aussi tirer une face au hasard, ce qui
     ##serait un peu plus couteux.
-    random_face = faces[random.randint(0, len(faces)-1)]
+    random_face = faces[0]#[random.randint(0, len(faces)-1)]
     
     #On récupère le premier vertex de la face
     first_vertex = random_face.vertices[0]
