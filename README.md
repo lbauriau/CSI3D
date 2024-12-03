@@ -8,4 +8,3 @@
 
   -  Le dossier **code** qui regroupe l'ensemble des codes produits pour ce projet
   -  Le dossier **TestModel** qui ressence l'ensemble des models( fichier .obj) que nous avons générer avec blender
-  -  
